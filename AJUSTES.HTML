@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlicoGabi - Ajustes</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primaria: #7e57ff;
+            --lavanda-claro: #f4f0ff;
+            --lavanda-medio: #e3d9ff;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: white; margin: 0; padding: 0; }
+        .container { background: white; width: 100%; min-height: 100vh; padding-bottom: 30px; display: flex; flex-direction: column; }
+        .header { background: var(--primaria); color: white; text-align: center; padding: 15px; }
+        .tabs { display: flex; background: var(--lavanda-claro); margin: 10px 15px; border-radius: 12px; padding: 5px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: none; font-weight: bold; color: var(--primaria); cursor: pointer; border-radius: 8px; }
+        .tab-btn.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,.1); }
+        .section-box { background: var(--lavanda-claro); margin: 0 15px 15px; padding: 15px; border-radius: 20px; border: 1px solid var(--lavanda-medio); }
+        input, select { padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 14px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        .btn-acao { background: var(--primaria); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 8px; }
+        .btn-pdf { background: #9b59b6; } .btn-wpp { background: #25d366; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+        th { background: var(--primaria); color: white; padding: 10px; font-size: 12px; text-align: left; }
+        td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .hidden { display: none !important; }
+        #modalRelatorio { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: none; overflow: auto; }
+        .rel-topo { background: var(--primaria); color: white; padding: 15px; display: flex; justify-content: space-between; position: sticky; top: 0; }
+        .folha { padding: 8mm; width: 275mm; margin: auto; background: white; color: black; }
+        .tab-rel { width: 100%; border-collapse: collapse; font-size: 8.5pt; table-layout: fixed; }
+        .tab-rel th { border: 1px solid var(--primaria); padding: 5px; background: var(--lavanda-medio); color: var(--primaria); }
+        .tab-rel td { border: 1px solid var(--lavanda-medio); padding: 3px; text-align: center; height: 5.8mm; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header"><h3>Ajustes GlicoGabi</h3></div>
+    <div class="tabs">
+        <button id="btnDoses" class="tab-btn active" onclick="toggleAba('doses')">Minhas Doses</button>
+        <button id="btnConfig" class="tab-btn" onclick="toggleAba('config')">Configurar</button>
+    </div>
+    <div id="abaConfig" class="hidden">
+        <label style="font-size:10px; font-weight:bold; color:var(--primaria); margin-left:20px">CONFIGURAR MEDICAÇÕES</label>
+        <div class="section-box" style="margin-top:5px">
+            <input type="hidden" id="editIdx" value="-1">
+            <input type="text" id="nomeMed" placeholder="Medicação (Ex: Insulina NPH)">
+            <input type="text" id="qtdMed" placeholder="Dose (Ex: 15 UI)">
+            <button class="btn-acao" onclick="salvarDose()">Salvar Configuração</button>
+        </div>
+    </div>
+    <div id="abaDoses">
+        <label style="font-size:10px; font-weight:bold; color:var(--primaria); margin-left:20px">DOSES CADASTRADAS</label>
+        <div class="section-box" style="margin-top:5px; padding:5px">
+            <table><thead><tr><th>Medicação</th><th>Qtd</th><th>Ações</th></tr></thead><tbody id="listaMeds"></tbody></table>
+        </div>
+        <label style="font-size:10px; font-weight:bold; color:var(--primaria); margin-left:20px">GERAR RELATÓRIO DINÂMICO</label>
+        <div class="section-box" style="margin-top:5px">
+            <input type="text" id="wppInput" placeholder="WhatsApp (DDD + Número)" onchange="salvarWpp()">
+            <div style="display: flex; gap: 5px;">
+                <select id="selMes" style="flex: 2;">
+                    <option value="Janeiro">Janeiro</option><option value="Fevereiro">Fevereiro</option>
+                    <option value="Março">Março</option><option value="Abril">Abril</option>
+                    <option value="Maio">Maio</option><option value="Junho">Junho</option>
+                    <option value="Julho">Julho</option><option value="Agosto">Agosto</option>
+                    <option value="Setembro">Setembro</option><option value="Outubro">Outubro</option>
+                    <option value="Novembro">Novembro</option><option value="Dezembro">Dezembro</option>
+                </select>
+                <input type="text" id="selAno" style="flex: 1;" value="2026">
+            </div>
+            <button class="btn-acao" onclick="verRelatorio()">1. Visualizar Planilha</button>
+            <button class="btn-acao btn-pdf" onclick="exportarPDF()">2. Baixar PDF</button>
+            <button class="btn-acao btn-wpp" onclick="enviarWpp()">3. Enviar por WhatsApp</button>
+            <button class="btn-acao" onclick="limparHistorico()" style="background:#f44336; margin-top: 10px;">Limpar Medidas da Home</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalRelatorio">
+    <div class="rel-topo"><b>RELATÓRIO GLICO GABI</b><button onclick="fecharRelatorio()">FECHAR X</button></div>
+    <div id="areaRel" class="folha">
+        <h2 style="text-align:center; color: var(--primaria);">PLANILHA DE CONTROLE GLICÊMICO</h2>
+        <h3 style="text-align:center;">PERÍODO: <span id="txtMes"></span> / <span id="txtAno"></span></h3>
+        <table class="tab-rel">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width:10mm">Dia</th>
+                    <th colspan="2">Café da Manhã</th>
+                    <th colspan="2">Almoço</th>
+                    <th colspan="2">Jantar</th>
+                    <th rowspan="2">Antes Dormir</th>
+                    <th rowspan="2">Anotações</th>
+                </tr>
+                <tr>
+                    <th>Antes</th><th>Depois</th>
+                    <th>Antes</th><th>Depois</th>
+                    <th>Antes</th><th>Depois</th>
+                </tr>
+            </thead>
+            <tbody id="corpoRel"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // CHAVE UNIFICADA PARA CONVERSAR COM A HOME
+    const CHAVE_BANCO = "gabi_database_v1"; 
+    
+    let db = JSON.parse(localStorage.getItem('gabi_ajustes_vFinal')) || [];
+    document.getElementById('wppInput').value = localStorage.getItem('gabi_wpp_ajustes') || "";
+
+    function toggleAba(aba) { 
+        document.getElementById('abaDoses').classList.toggle('hidden', aba !== 'doses'); 
+        document.getElementById('abaConfig').classList.toggle('hidden', aba !== 'config'); 
+        document.getElementById('btnDoses').classList.toggle('active', aba === 'doses'); 
+        document.getElementById('btnConfig').classList.toggle('active', aba === 'config'); 
+        if(aba === 'doses') render(); 
+    }
+
+    function salvarDose() { 
+        const nome = document.getElementById('nomeMed').value; 
+        const qtd = document.getElementById('qtdMed').value; 
+        const idx = parseInt(document.getElementById('editIdx').value); 
+        if(!nome || !qtd) return alert("Preencha todos os campos."); 
+        if(idx === -1) db.push({nome, qtd}); 
+        else db[idx] = {nome, qtd}; 
+        localStorage.setItem('gabi_ajustes_vFinal', JSON.stringify(db)); 
+        document.getElementById('nomeMed').value = ""; 
+        document.getElementById('qtdMed').value = ""; 
+        document.getElementById('editIdx').value = "-1"; 
+        toggleAba('doses'); 
+    }
+
+    function render() { 
+        const lista = document.getElementById('listaMeds'); 
+        lista.innerHTML = db.map((m, i) => `<tr><td>${m.nome}</td><td>${m.qtd}</td><td><button onclick="editar(${i})">✏️</button><button onclick="remover(${i})">❌</button></td></tr>`).join(''); 
+    }
+
+    function editar(i) { 
+        document.getElementById('nomeMed').value = db[i].nome; 
+        document.getElementById('qtdMed').value = db[i].qtd; 
+        document.getElementById('editIdx').value = i; 
+        toggleAba('config'); 
+    }
+
+    function remover(i) { 
+        if(confirm("Deseja remover?")) { 
+            db.splice(i, 1); 
+            localStorage.setItem('gabi_ajustes_vFinal', JSON.stringify(db)); 
+            render(); 
+        } 
+    }
+
+    function salvarWpp() { localStorage.setItem('gabi_wpp_ajustes', document.getElementById('wppInput').value); }
+
+    function verRelatorio() { 
+        const mesSel = document.getElementById('selMes').value; 
+        const anoSel = document.getElementById('selAno').value; 
+        const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        
+        // LÊ O BANCO DA HOME
+        const banco = JSON.parse(localStorage.getItem(CHAVE_BANCO) || "[]");
+        
+        let html = ""; 
+        for(let dia=1; dia<=31; dia++) { 
+            // Filtra medições deste dia específico para montar a linha da tabela
+            const dadosDoDia = banco.filter(item => {
+                const dataObj = new Date(item.data + "T00:00:00");
+                return dataObj.getDate() === dia && 
+                       mesesNomes[dataObj.getMonth()] === mesSel && 
+                       dataObj.getFullYear().toString() === anoSel;
+            });
+
+            // Função para pegar o valor baseado no nome exato que está no select da HOME
+            const getVal = (m) => {
+                const r = dadosDoDia.find(d => d.momento.toLowerCase().includes(m.toLowerCase()));
+                return r ? r.valor : "";
+            };
+
+            html += `<tr>
+                <td>${dia}</td>
+                <td>${getVal('Jejum')}</td>
+                <td>${getVal('Pós café')}</td>
+                <td>${getVal('Antes do almoço')}</td>
+                <td>${getVal('Depois do almoço')}</td>
+                <td>${getVal('Antes da janta')}</td>
+                <td>${getVal('Depois da janta')}</td>
+                <td>${getVal('Dormir')}</td>
+                <td></td>
+            </tr>`; 
+        } 
+        document.getElementById('txtMes').innerText = mesSel.toUpperCase(); 
+        document.getElementById('txtAno').innerText = anoSel; 
+        document.getElementById('corpoRel').innerHTML = html; 
+        document.getElementById('modalRelatorio').style.display = "block"; 
+    }
+
+    function fecharRelatorio() { document.getElementById('modalRelatorio').style.display = "none"; }
+
+    function exportarPDF() { 
+        const element = document.getElementById('areaRel'); 
+        const opt = { 
+            margin: [2,2,2,2], 
+            filename: `Relatorio_Glicemia_${document.getElementById('selMes').value}.pdf`, 
+            jsPDF: { orientation: 'landscape' } 
+        }; 
+        html2pdf().from(element).set(opt).save(); 
+    }
+
+    function enviarWpp() { 
+        const num = document.getElementById('wppInput').value; 
+        if(!num) return alert("Informe o número."); 
+        const mes = document.getElementById('selMes').value; 
+        const msg = encodeURIComponent(`Olá! Segue meu Relatório de Glicemia de ${mes}.`); 
+        window.open(`https://wa.me/55${num}?text=${msg}`); 
+    }
+
+    function limparHistorico() {
+        if(confirm("Deseja apagar todas as medidas da Home?")) {
+            localStorage.removeItem(CHAVE_BANCO);
+            alert("Histórico da Home limpo!");
+        }
+    }
+
+    render();
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlicoGabi - Linha do Tempo</title>
+    <style>
+        :root { --primaria: #7e57ff; --laranja: #ff9800; }
+        body { font-family: 'Segoe UI', sans-serif; background: white; margin: 0; padding: 0; }
+        .container { width: 100%; min-height: 100vh; display: flex; flex-direction: column; padding-bottom: 30px; }
+        .header { background-color: var(--primaria); color: white; padding: 30px 20px; text-align: center; }
+        .input-area { background-color: #f4f0ff; margin: 15px; padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 12px; }
+        label { font-size: 11px; font-weight: bold; color: var(--primaria); text-transform: uppercase; }
+        input, select, textarea { padding: 12px; border-radius: 12px; border: 1px solid #ddd; font-size: 14px; }
+        button#btn-salvar { background-color: var(--laranja); color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; }
+        .history-list { padding: 0 15px 20px; }
+        .group-card { background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 6px solid var(--primaria); }
+        .group-header { padding: 8px 15px; background: #f9f9f9; display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; color: var(--primaria); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header"><h1>Linha do Tempo</h1><p>Evolução da Gabriela</p></div>
+    <div class="input-area">
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;"><label>Mês</label><select id="mes" style="width:100%"><option value="9">Setembro</option><option value="10">Outubro</option></select></div>
+            <div style="flex: 1;"><label>Ano</label><input type="number" id="ano" value="2024" style="width:100%"></div>
+        </div>
+        <label>Descrição</label><textarea id="descricao"></textarea>
+        <button id="btn-salvar" onclick="salvarHistorico()">Salvar Dados</button>
+    </div>
+    <div id="historicoEventos" class="history-list"></div>
+</div>
+<script>
+    let eventos = [];
+    function salvarHistorico() {
+        const mes = document.getElementById('mes').value;
+        const ano = document.getElementById('ano').value;
+        const desc = document.getElementById('descricao').value;
+        if (!desc) return alert("Preencha a descrição!");
+        eventos.push({ id: Date.now(), mes, ano, descricao: desc, timestamp: (ano * 12) + parseInt(mes) });
+        eventos.sort((a, b) => a.timestamp - b.timestamp);
+        renderizar();
+        document.getElementById('descricao').value = "";
+    }
+    function renderizar() {
+        const lista = document.getElementById('historicoEventos'); lista.innerHTML = "";
+        eventos.forEach(e => {
+            lista.innerHTML += `<div class="group-card"><div class="group-header"><span>Mês ${e.mes} de ${e.ano}</span></div><div style="padding:15px">${e.descricao}</div></div>`;
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlicoGabi - Consultas</title>
+    <style>
+        :root { --primaria: #7e57ff; --laranja: #ff9800; --verde: #4caf50; }
+        body { font-family: 'Segoe UI', sans-serif; background: white; margin: 0; padding: 0; }
+        .container { width: 100%; min-height: 100vh; padding-bottom: 30px; display: flex; flex-direction: column; }
+        .header { background-color: var(--primaria); color: white; padding: 30px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .input-area { background-color: #f4f0ff; margin: 20px 15px 15px; padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
+        label { font-size: 11px; font-weight: bold; color: var(--primaria); text-transform: uppercase; }
+        input, select { padding: 12px; border-radius: 12px; border: 1px solid #ddd; outline: none; }
+        button#btn-salvar { background-color: var(--primaria); color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; }
+        .history-list { padding: 0 15px 20px; }
+        .group-card { background: white; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 6px solid var(--laranja); }
+        .group-header { padding: 10px 15px; font-weight: bold; font-size: 13px; color: var(--primaria); display: flex; justify-content: space-between; }
+        .main-entry { padding: 15px; }
+        .doc-name { font-size: 18px; font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header"><h1>Consultas e Exames</h1><p>Agenda da Gabriela</p></div>
+    <div class="input-area">
+        <label>Médico ou Especialidade</label><input type="text" id="medico" placeholder="Ex: Dr. João">
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;"><label>Data</label><input type="date" id="data_consulta" style="width:100%"></div>
+            <div style="flex: 1;"><label>Hora</label><input type="time" id="hora_consulta" style="width:100%"></div>
+        </div>
+        <label>Local</label><input type="text" id="local" placeholder="Endereço">
+        <label>Tipo</label><select id="tipo"><option value="Consulta">🩺 Consulta</option><option value="Exame">🧪 Exame</option></select>
+        <button id="btn-salvar" onclick="salvarConsulta()">Salvar Agendamento</button>
+    </div>
+    <div id="historicoConsultas" class="history-list"></div>
+</div>
+<script>
+    let consultas = [];
+    function salvarConsulta() {
+        const medico = document.getElementById('medico').value;
+        const data = document.getElementById('data_consulta').value;
+        const hora = document.getElementById('hora_consulta').value;
+        const local = document.getElementById('local').value;
+        const tipo = document.getElementById('tipo').value;
+        if (!medico || !data || !hora) return alert("Preencha os campos!");
+        const dataObjeto = new Date(`${data}T${hora}`);
+        consultas.push({ id: Date.now(), medico, data, dataObjeto, hora, local, tipo });
+        consultas.sort((a, b) => a.dataObjeto - b.dataObjeto);
+        renderizarCards();
+        document.getElementById('medico').value = "";
+    }
+    function excluirConsulta(id) { consultas = consultas.filter(c => c.id !== id); renderizarCards(); }
+    function renderizarCards() {
+        const lista = document.getElementById('historicoConsultas'); lista.innerHTML = "";
+        consultas.forEach(c => {
+            const card = document.createElement('div'); card.className = 'group-card';
+            if(c.tipo === "Exame") card.style.borderLeftColor = "var(--verde)";
+            card.innerHTML = `<div class="group-header"><span>📅 ${c.data}</span><button onclick="excluirConsulta(${c.id})">×</button></div><div class="main-entry"><span class="doc-name">${c.medico}</span><br>⏰ ${c.hora} | 📍 ${c.local}</div>`;
+            lista.appendChild(card);
+        });
+    }
+</script>
+</body>
+</html>

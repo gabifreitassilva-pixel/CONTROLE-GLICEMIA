@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlicoGabi - Estoque</title>
+    <style>
+        :root { --primaria:#7e57ff; --laranja:#ff9800; }
+        body { font-family:'Segoe UI',sans-serif; background:white; margin:0; padding:0; }
+        .container { background:white; width: 100%; min-height: 100vh; display:flex; flex-direction:column; padding-bottom: 30px; }
+        .header { background:var(--primaria); color:white; padding:25px; text-align:center; }
+        .tabs { display:flex; background:#f4f0ff; margin:10px 15px; border-radius:12px; padding:5px; }
+        .tab-btn { flex:1; padding:12px; border:none; background:none; font-weight:bold; color:var(--primaria); font-size: 12px; }
+        .tab-btn.active { background:white; box-shadow:0 2px 5px rgba(0,0,0,.1); border-radius:8px; }
+        .input-area { background:#f4f0ff; margin:0 15px 15px; padding:15px; border-radius:20px; display:flex; flex-direction:column; gap:10px; }
+        label { font-size:10px; font-weight:bold; color:var(--primaria); text-transform: uppercase; }
+        input, textarea { padding:12px; border-radius:10px; border:1px solid #ddd; }
+        .btn-acao { background:var(--laranja); color:white; border:none; padding:14px; border-radius:12px; font-weight:bold; cursor:pointer; }
+        .hidden { display:none !important; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header"><h1>GlicoGabi</h1></div>
+    <div class="tabs">
+        <button id="tabEntrada" class="tab-btn active">Entrada</button>
+        <button id="tabEstoque" class="tab-btn">Estoque</button>
+        <button id="tabAjuste" class="tab-btn">Ajuste</button>
+    </div>
+    <div id="abaEntrada" class="content-section">
+        <div class="input-area"><label>Nova Glicemia</label><input type="number" placeholder="mg/dL"><button class="btn-acao" style="background:var(--primaria)">Salvar Glicemia</button></div>
+    </div>
+    <div id="abaEstoque" class="content-section hidden"><p style="text-align:center; color:#999">Conteúdo do Estoque...</p></div>
+    <div id="abaAjuste" class="content-section hidden">
+        <div class="input-area"><label>Dosagens Atuais</label><textarea id="medsAtuais" rows="4"></textarea><button id="btnSalvarMeds" class="btn-acao" style="background:var(--primaria)">Salvar Dosagens</button></div>
+        <div class="input-area"><button onclick="gerarRelatorio('whatsapp')" class="btn-acao" style="background:var(--verde)">💬 WhatsApp</button></div>
+    </div>
+</div>
+<script>
+    const secoes = { tabEntrada: 'abaEntrada', tabEstoque: 'abaEstoque', tabAjuste: 'abaAjuste' };
+    Object.keys(secoes).forEach(tabId => {
+        document.getElementById(tabId).onclick = () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById(secoes[tabId]).classList.remove('hidden');
+        };
+    });
+    function gerarRelatorio(tipo) {
+        const dados = document.getElementById('medsAtuais').value;
+        if(tipo === 'whatsapp') window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(dados)}`);
+    }
+</script>
+</body>
+</html>

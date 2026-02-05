@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlicoGabi - Lembretes</title>
+    <style>
+        :root { --primaria: #7e57ff; --lavanda-claro: #f4f0ff; }
+        body { font-family: 'Segoe UI', sans-serif; background: white; margin: 0; padding: 0; }
+        .container { background: white; width: 100%; min-height: 100vh; padding-bottom: 30px; display: flex; flex-direction: column; }
+        .header { background: var(--primaria); color: white; text-align: center; padding: 15px; }
+        .tabs { display: flex; background: var(--lavanda-claro); margin: 10px 15px; border-radius: 12px; padding: 5px; gap: 5px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: none; font-weight: bold; color: var(--primaria); font-size: 11px; }
+        .tab-btn.active { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,.1); }
+        .section-box { background: var(--lavanda-claro); margin: 0 15px 15px; padding: 15px; border-radius: 20px; border: 1px solid #e3d9ff; }
+        input { padding: 12px; border-radius: 10px; border: 1px solid #ddd; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        .btn-acao { background: var(--primaria); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; width: 100%; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header"><h3>Lembretes GlicoGabi</h3></div>
+    <div class="tabs">
+        <button id="btnLembretes" class="tab-btn active" onclick="toggleAba('lembretes')">Lembretes Atuais</button>
+        <button id="btnConfigLembrete" class="tab-btn" onclick="toggleAba('config-lembrete')">Configurar</button>
+    </div>
+    <div id="abaConfigLembrete" class="hidden">
+        <div class="section-box">
+            <input type="text" id="titLembrete" placeholder="Descrição">
+            <input type="time" id="horaLembrete">
+            <button class="btn-acao" onclick="salvarLembrete()">Salvar Despertador</button>
+        </div>
+    </div>
+    <div id="abaLembretes"><div id="listaLembretes" class="section-box">Nenhum alerta ativo</div></div>
+</div>
+<script>
+    let lembretes = [];
+    function toggleAba(aba) {
+        document.getElementById('abaLembretes').classList.toggle('hidden', aba !== 'lembretes');
+        document.getElementById('abaConfigLembrete').classList.toggle('hidden', aba !== 'config-lembrete');
+    }
+    function salvarLembrete() {
+        const tit = document.getElementById('titLembrete').value;
+        const hora = document.getElementById('horaLembrete').value;
+        if(!tit || !hora) return alert("Preencha!");
+        lembretes.push({ tit, hora });
+        render();
+        toggleAba('lembretes');
+    }
+    function render() {
+        document.getElementById('listaLembretes').innerHTML = lembretes.map(l => `<div><b>${l.hora}</b> - ${l.tit}</div>`).join('');
+    }
+</script>
+</body>
+</html>
