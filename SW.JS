@@ -1,5 +1,5 @@
 // Aumente a versão (ex: v13, v14...) para atualizar o app no celular
-const CACHE_NAME = 'glicogabi-v13'; 
+const CACHE_NAME = 'glicogabi-v14'; 
 
 const ASSETS = [
   'index.html',
