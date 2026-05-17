@@ -5,7 +5,7 @@ const CACHE_NAME = 'glicogabi-v33';
 const ASSETS = [
   'index.html',
   'manifest.json',
-  'ícone (2).png'
+  'ícone(2).png'
 ];
 
 // Evento de Instalação: Salva os arquivos reais no cache
