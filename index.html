@@ -112,6 +112,25 @@
         .tab-rel td { border: 1px solid var(--lavanda-medio); padding: 3px; text-align: center; height: 5.8mm; word-wrap: break-word; }
 
         .resumo-dia { text-align: center; font-size: 12px; color: #555; margin-bottom: 10px; font-weight: bold; }
+
+        /* Modal Alarme Inteligente */
+        #modalAlarme { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); z-index: 99999; display: none; 
+            justify-content: center; align-items: center; flex-direction: column; padding: 20px;
+        }
+        .alarme-box { 
+            background: white; border-radius: 20px; padding: 30px 20px; width: 100%; max-width: 400px; 
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            animation: tremer 0.6s infinite alternate; border: 4px solid var(--primaria);
+        }
+        @keyframes tremer {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            100% { transform: translate(-1px, -2px) rotate(-1deg); }
+        }
+        .btn-alarme { padding: 18px; border-radius: 12px; font-size: 16px; font-weight: bold; border: none; width: 100%; margin-top: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;}
+        .btn-desligar { background: var(--verde); color: white; }
+        .btn-soneca { background: #ffc107; color: #333; }
     </style>
 </head>
 <body>
@@ -316,7 +335,7 @@
             <div class="input-area">
                 <label>Criar Novo Alarme</label>
                 <div style="display: flex; gap: 5px;">
-                    <input type="text" id="nomeLembrete" placeholder="Ex: Medir Glicose" style="flex: 2;">
+                    <input type="text" id="nomeLembrete" placeholder="Ex: Medir Glicose / Tomar NPH" style="flex: 2;">
                     <input type="time" id="horaLembrete" style="flex: 1;">
                 </div>
                 <button class="btn-acao" onclick="salvarLembrete()" style="margin-bottom: 0;">Salvar Alarme</button>
@@ -373,6 +392,18 @@
         </div>
     </div>
 
+    <!-- MODAL DO ALARME NA TELA -->
+    <div id="modalAlarme">
+        <div class="alarme-box">
+            <div style="font-size: 50px; margin-bottom: 5px;">⏰</div>
+            <h2 style="color: var(--vermelho); margin: 0 0 10px; text-transform: uppercase;">Atenção!</h2>
+            <p id="textoModalAlarme" style="font-size: 22px; font-weight: bold; color: #333; margin-bottom: 25px; line-height: 1.3;"></p>
+            
+            <button class="btn-alarme btn-desligar" onclick="pararAlarme()">✔️ JÁ FIZ / DESLIGAR</button>
+            <button class="btn-alarme btn-soneca" onclick="sonecaAlarme()">💤 Lembrar em 5 Minutos</button>
+        </div>
+    </div>
+
     <!-- IMPORTAÇÃO E LÓGICA DO FIREBASE COMO MÓDULO -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -416,6 +447,10 @@
         let syncCode = localStorage.getItem('gabi_sync_code') || '';
         let lembretesDisparadosHoje = {}; 
         let unsubscribeSnapshot = null;
+
+        // Variaveis de Áudio e Alarme na tela
+        let intervalAudio = null;
+        let msgAlarmeAtual = "";
 
         // Variaveis de dados
         let consultas = JSON.parse(localStorage.getItem('gabi_consultas')) || [];
@@ -527,7 +562,7 @@
             if(wppMedicoSalvo) document.getElementById('wppMedico').value = wppMedicoSalvo;
 
             renderDosesHome(); renderizarGlicemia(); renderizarLembretes();
-            setInterval(checarAlarmes, 10000);
+            setInterval(checarAlarmes, 10000); // Checa alarmes a cada 10 segundos
         };
 
         window.navegar = function(idTela, btn) {
@@ -568,7 +603,7 @@
                 localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes));
                 sincronizarComNuvem('lembretes', lembretes); // <--- SYNC
                 renderizarLembretes();
-                alert(`Salvo com sucesso!\nO GlicoGabi programou um alarme para ${horaAlarme} para você medir de novo.`);
+                alert(`Salvo com sucesso!\nO GlicoGabi programou um alarme para as ${horaAlarme} para você medir de novo.`);
             } catch(e) {}
 
             document.getElementById('glicemia').value = "";
@@ -801,7 +836,19 @@
             });
         };
 
-        // --- ALARMES ---
+        // --- ALARMES E JANELA DE NOTIFICAÇÃO NA TELA ---
+        window.tocarBipe = function() {
+            try { 
+                const ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+                const osc = ctx.createOscillator(); 
+                osc.type = 'sine'; 
+                osc.frequency.setValueAtTime(880, ctx.currentTime); 
+                osc.connect(ctx.destination); 
+                osc.start(); 
+                osc.stop(ctx.currentTime + 0.3); 
+            } catch(e) {}
+        };
+
         window.solicitarPermissaoNotificacao = function() {
             if (!("Notification" in window)) return alert("Seu navegador não suporta notificações nativas.");
             Notification.requestPermission().then(permission => { if (permission === "granted") { document.getElementById('areaPermissao').style.display = 'none'; alert("Notificações ativadas!"); } });
@@ -824,6 +871,7 @@
             if (lembretes.length === 0) return lista.innerHTML = "<p style='text-align:center; color:#999; font-size:12px;'>Nenhum alarme configurado.</p>";
             lembretes.forEach(l => { lista.innerHTML += `<div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid var(--laranja);"><div><div style="font-weight: bold; font-size: 18px; color: #333;">⏰ ${l.hora}</div><div style="font-size: 14px; color: #666; margin-top: 3px;">${l.nome}</div></div><button onclick="excluirLembrete(${l.id})" style="background: transparent; color: #f44336; font-size: 20px; padding: 5px; width: auto; border: none;">🗑️</button></div>`; });
         };
+
         window.checarAlarmes = function() {
             if (lembretes.length === 0) return;
             const agora = new Date(); const horaAtual = agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0'); const dataHoje = agora.toISOString().split('T')[0];
@@ -834,10 +882,33 @@
                 }
             });
         };
+
         window.dispararNotificacao = function(mensagem) {
-            const titulo = "⏰ Lembrete GlicoGabi!";
-            try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime); osc.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 1); } catch(e) {}
-            if ("Notification" in window && Notification.permission === "granted") { new Notification(titulo, { body: mensagem, icon: "ICONE.png", vibrate: [200, 100, 200, 100, 200] }); } else { alert(`${titulo}\n\n${mensagem}`); }
+            msgAlarmeAtual = mensagem;
+            document.getElementById('textoModalAlarme').innerText = mensagem;
+            document.getElementById('modalAlarme').style.display = 'flex';
+            
+            // Toca um bipe imediatamente e depois repete até desligar
+            window.tocarBipe();
+            if (intervalAudio) clearInterval(intervalAudio);
+            intervalAudio = setInterval(window.tocarBipe, 2000); // Bipa a cada 2 segundos
+            
+            if ("Notification" in window && Notification.permission === "granted") { 
+                new Notification("⏰ Lembrete GlicoGabi!", { body: mensagem, icon: "ICONE.png" }); 
+            }
+        };
+
+        window.pararAlarme = function() {
+            if (intervalAudio) clearInterval(intervalAudio);
+            document.getElementById('modalAlarme').style.display = 'none';
+        };
+
+        window.sonecaAlarme = function() {
+            window.pararAlarme(); // Para o som e esconde
+            // Programa de forma forçada para tocar daqui a 5 minutos exatos
+            setTimeout(() => {
+                window.dispararNotificacao(msgAlarmeAtual);
+            }, 5 * 60 * 1000); 
         };
 
         // --- RELATÓRIOS E LIMPEZA ---
@@ -931,16 +1002,23 @@
             else if (semSel === '5') { startDay = 29; endDay = diasNoMes; }
 
             let periodoTxt = semSel === 'all' ? `Mês: ${mesSel} / ${anoSel}` : `Mês: ${mesSel} / ${anoSel} (Semana ${semSel})`;
-            let texto = `*RELATÓRIO GLICÊMICO - GABRIELA*\n*${periodoTxt}*\n\n`;
+            let texto = `*CONTROLE GLICÊMICO - GABRIELA*\n*${periodoTxt}*\n\n`;
             
             const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]"); let temDado = false;
+            
+            // CONSTRUINDO A MENSAGEM DO WHATSAPP DE FORMA SUPER ORGANIZADA (IMITANDO A TABELA)
             for(let dia=startDay; dia<=endDay; dia++) {
                 const dadosDoDia = banco.filter(item => { const dataObj = new Date(item.data + "T00:00:00"); return dataObj.getDate() === dia && mesesNomes[dataObj.getMonth()] === mesSel && dataObj.getFullYear().toString() === anoSel; });
                 if(dadosDoDia.length > 0) {
-                    temDado = true; texto += `*Dia ${dia}*\n`;
-                    const getValStr = (m) => { const r = dadosDoDia.filter(d => d.momento.toLowerCase().includes(m.toLowerCase())); return r.length === 0 ? "" : r.map(x => x.valor + " mg/dL").join(", "); };
-                    const items = [ {lbl: 'Jejum', val: getValStr('Jejum')}, {lbl: 'Pós café', val: getValStr('Pós café')}, {lbl: 'Antes almoço', val: getValStr('Antes do almoço')}, {lbl: 'Depois almoço', val: getValStr('Depois do almoço')}, {lbl: 'Antes janta', val: getValStr('Antes da janta')}, {lbl: 'Depois janta', val: getValStr('Depois da janta')}, {lbl: 'Dormir', val: getValStr('Dormir')}, {lbl: 'Madrugada', val: getValStr('Madrugada')} ];
-                    items.forEach(i => { if(i.val) texto += `- ${i.lbl}: ${i.val}\n`; }); texto += `\n`;
+                    temDado = true; 
+                    texto += `*--- DIA ${String(dia).padStart(2, '0')} ---*\n`;
+                    
+                    const getValStr = (m) => { const r = dadosDoDia.filter(d => d.momento.toLowerCase().includes(m.toLowerCase())); return r.length === 0 ? " - " : r.map(x => x.valor).join(", "); };
+                    
+                    texto += `🌅 *Café da Manhã* ➔ Ant: ${getValStr('Jejum')} | Dep: ${getValStr('Pós café')}\n`;
+                    texto += `🍽️ *Almoço* ➔ Ant: ${getValStr('Antes do almoço')} | Dep: ${getValStr('Depois do almoço')}\n`;
+                    texto += `🍲 *Jantar* ➔ Ant: ${getValStr('Antes da janta')} | Dep: ${getValStr('Depois da janta')}\n`;
+                    texto += `🌙 *Noite* ➔ Dormir: ${getValStr('Dormir')} | Madrug: ${getValStr('Madrugada')}\n\n`;
                 }
             }
             if(!temDado) texto += `Nenhuma medição registrada neste período.`;
