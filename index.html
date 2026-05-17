@@ -147,29 +147,7 @@
 
             <div id="resumoDia" class="resumo-dia"></div>
 
-            <div class="section-box" style="margin: 0 15px 20px; padding: 10px; background: white;">
-                <div style="font-size: 12px; font-weight: bold; color: var(--primaria); text-align: center; margin-bottom: 10px; text-transform: uppercase;">📊 Tabela do Mês Selecionado</div>
-                <div class="table-responsive">
-                    <table class="tab-rel" style="min-width: 600px;">
-                        <thead>
-                            <tr>
-                                <th rowspan="2" style="width:10mm">Dia</th>
-                                <th colspan="2">Café da Manhã</th>
-                                <th colspan="2">Almoço</th>
-                                <th colspan="2">Jantar</th>
-                                <th rowspan="2">Antes Dormir</th>
-                                <th rowspan="2">Madrugada</th>
-                            </tr>
-                            <tr>
-                                <th>Antes</th><th>Depois</th>
-                                <th>Antes</th><th>Depois</th>
-                                <th>Antes</th><th>Depois</th>
-                            </tr>
-                        </thead>
-                        <tbody id="corpoTabelaHome"></tbody>
-                    </table>
-                </div>
-            </div>
+            <div id="historicoGlicemia" class="history-list"></div>
         </div>
 
         <!-- 2. TELA CONSULTAS -->
@@ -578,62 +556,44 @@
         window.renderizarGlicemia = function() {
             const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]");
             const dataFiltro = document.getElementById('data_r').value;
-            const dataObjFiltro = new Date(dataFiltro + "T00:00:00");
-            const mesAtual = dataObjFiltro.getMonth();
-            const anoAtual = dataObjFiltro.getFullYear();
-            const diasNoMes = new Date(anoAtual, mesAtual + 1, 0).getDate();
+            const lista = document.getElementById('historicoGlicemia');
+            lista.innerHTML = "";
             
-            // 1. Renderiza a Tabela do Mês na Home
-            let htmlTabela = "";
-            for(let dia=1; dia<=diasNoMes; dia++) {
-                const dadosDoDia = banco.filter(item => { 
-                    const dObj = new Date(item.data + "T00:00:00"); 
-                    return dObj.getDate() === dia && dObj.getMonth() === mesAtual && dObj.getFullYear() === anoAtual; 
-                });
-                
-                const getVal = (m) => { 
-                    const r = dadosDoDia.filter(d => d.momento.toLowerCase().includes(m.toLowerCase())); 
-                    return r.length === 0 ? "" : r.map(d => `<div style="position:relative; display:inline-block; margin:2px;"><b>${d.valor}</b><span onclick="excluirGlicemia(${d.id})" style="color:#f44336; font-size:14px; cursor:pointer; margin-left:3px; font-weight:bold;">&times;</span></div>`).join('<br>'); 
-                };
-                
-                let trClass = dia === dataObjFiltro.getDate() ? 'style="background-color: #f4f0ff;"' : '';
+            const filtrados = banco.filter(item => item.data === dataFiltro).sort((a,b) => a.hora.localeCompare(b.hora));
 
-                htmlTabela += `<tr ${trClass}>
-                    <td><b>${dia}</b></td>
-                    <td>${getVal('Jejum')}</td>
-                    <td>${getVal('Pós café')}</td>
-                    <td>${getVal('Antes do almoço')}</td>
-                    <td>${getVal('Depois do almoço')}</td>
-                    <td>${getVal('Antes da janta')}</td>
-                    <td>${getVal('Depois da janta')}</td>
-                    <td>${getVal('Dormir')}</td>
-                    <td>${getVal('Madrugada')}</td>
-                </tr>`;
+            let somaGlicemia = 0; let agrupados = {};
+            filtrados.forEach(item => { 
+                somaGlicemia += item.valor; 
+                if(!agrupados[item.momento]) agrupados[item.momento] = []; 
+                agrupados[item.momento].push(item); 
+            });
+
+            // RENDERIZAR OS CARDS NA TELA HOME
+            for(let momento in agrupados) {
+                let itens = agrupados[momento];
+                let htmlItens = itens.map(item => {
+                    let corTexto = item.valor > 180 ? 'var(--vermelho)' : (item.valor < 70 ? 'var(--azul)' : 'var(--verde)');
+                    let msgIncentivo = "";
+                    let isJejum = item.momento.toLowerCase().includes("jejum") || item.momento.toLowerCase().includes("madrugada");
+                    if (item.valor < 70) msgIncentivo = "⚠️ Hipoglicemia. Consuma um carboidrato rápido e repita o teste em 15 min. Cuide-se!";
+                    else if (item.valor > 250) msgIncentivo = "🚨 Está alto. Beba água, verifique a insulina e não desanime, você consegue baixar!";
+                    else if (item.valor > 180) msgIncentivo = "👀 Fique atento(a). Um pouco acima do limite, mas ajustar faz parte do processo!";
+                    else if (isJejum && item.valor > 130) msgIncentivo = "⚠️ Um pouco acima do ideal para jejum. Fique de olho, mas siga firme no tratamento!";
+                    else msgIncentivo = "🌟 Excelente! Nível dentro do limite. Continue com esse ótimo cuidado!";
+
+                    return `
+                        <div style="border-bottom: 1px solid #eee; padding: 12px 0; border-radius: 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <div class="card-val" style="margin: 0;"><span style="color: ${corTexto};">${item.valor}</span><small style="font-size: 14px; color: #666; font-weight: normal;">mg/dL</small></div>
+                                <div style="display: flex; align-items: center; gap: 15px;"><span style="font-size: 12px; color: #999;">⏰ ${item.hora}</span><button class="btn-excluir" onclick="excluirGlicemia(${item.id})">✕</button></div>
+                            </div>
+                            <div style="font-size: 12px; color: #555; background-color: #f9f9f9; padding: 6px; border-radius: 6px; font-style: italic;">${msgIncentivo}</div>
+                        </div>`;
+                }).join('');
+                lista.innerHTML += `<div class="card" style="border-left-color: var(--primaria); padding-bottom: 5px;"><div class="card-header" style="border-bottom: 2px solid #f4f0ff; padding-bottom: 5px; margin-bottom: 5px;"><span style="font-size: 16px;">${momento}</span></div>${htmlItens}</div>`;
             }
-            document.getElementById('corpoTabelaHome').innerHTML = htmlTabela;
-
-            // 2. Renderiza o Resumo e a Mensagem Motivacional
-            const filtradosHoje = banco.filter(item => item.data === dataFiltro).sort((a,b) => b.hora.localeCompare(a.hora));
-            const divResumo = document.getElementById('resumoDia');
             
-            if (filtradosHoje.length > 0) {
-                const ultimo = filtradosHoje[0];
-                let msgIncentivo = "";
-                let isJejum = ultimo.momento.toLowerCase().includes("jejum") || ultimo.momento.toLowerCase().includes("madrugada");
-                
-                if (ultimo.valor < 70) msgIncentivo = "⚠️ Hipoglicemia. Consuma um carboidrato rápido e repita o teste em 15 min. Cuide-se!";
-                else if (ultimo.valor > 250) msgIncentivo = "🚨 Está alto. Beba água, verifique a insulina e não desanime, você consegue baixar!";
-                else if (ultimo.valor > 180) msgIncentivo = "👀 Fique atento(a). Um pouco acima do limite, mas ajustar faz parte do processo!";
-                else if (isJejum && ultimo.valor > 130) msgIncentivo = "⚠️ Um pouco acima do ideal para jejum. Fique de olho, mas siga firme no tratamento!";
-                else msgIncentivo = "🌟 Excelente! Nível dentro do limite. Continue com esse ótimo cuidado!";
-                
-                divResumo.innerHTML = `<div style="background: white; border-left: 5px solid var(--primaria); padding: 10px; border-radius: 10px; margin: 10px 15px 15px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 3px; text-transform: uppercase;">Última Medição Hoje (${ultimo.hora}): <b style="color: var(--primaria); font-size: 14px;">${ultimo.valor} mg/dL</b></div>
-                    <div style="font-size: 13px; color: #555; font-style: italic;">${msgIncentivo}</div>
-                </div>`;
-            } else {
-                divResumo.innerHTML = `<div style="margin: 10px 15px 20px; font-size: 12px; color: #999; text-align: center;">Nenhuma medição registrada para a data selecionada.</div>`;
-            }
+            document.getElementById('resumoDia').innerHTML = filtrados.length > 0 ? `Média do dia: <b>${Math.round(somaGlicemia / filtrados.length)} mg/dL</b> (${filtrados.length} medições)` : `Nenhuma medição registrada para este dia.`;
         };
 
         // --- ESTOQUE ---
@@ -799,7 +759,49 @@
         // --- RELATÓRIOS E LIMPEZA ---
         window.salvarWpp = () => localStorage.setItem('gabi_wpp_ajustes', document.getElementById('wppInput').value);
         window.fecharRelatorio = () => document.getElementById('modalRelatorio').style.display = "none";
-        window.exportarPDF = () => html2pdf().from(document.getElementById('areaRel')).set({ margin: [2,2,2,2], filename: `Relatorio_Gabi.pdf`, jsPDF: { orientation: 'landscape' } }).save();
+        
+        window.verRelatorio = function(silent = false) { 
+            const mesSel = document.getElementById('selMes').value; 
+            const anoSel = document.getElementById('selAno').value; 
+            const semSel = document.getElementById('selSemana').value;
+            const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            const mesIdx = mesesNomes.indexOf(mesSel);
+            const diasNoMes = new Date(anoSel, mesIdx + 1, 0).getDate();
+
+            // Lógica para filtrar a semana
+            let startDay = 1; let endDay = diasNoMes;
+            if (semSel === '1') { startDay = 1; endDay = 7; }
+            else if (semSel === '2') { startDay = 8; endDay = 14; }
+            else if (semSel === '3') { startDay = 15; endDay = 21; }
+            else if (semSel === '4') { startDay = 22; endDay = 28; }
+            else if (semSel === '5') { startDay = 29; endDay = diasNoMes; }
+
+            const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]");
+            let html = ""; 
+            
+            // Loop vai montar a tabela APENAS nos dias selecionados da semana
+            for(let dia=startDay; dia<=endDay; dia++) { 
+                const dadosDoDia = banco.filter(item => { const dataObj = new Date(item.data + "T00:00:00"); return dataObj.getDate() === dia && mesesNomes[dataObj.getMonth()] === mesSel && dataObj.getFullYear().toString() === anoSel; });
+                const getVal = (m) => { const r = dadosDoDia.filter(d => d.momento.toLowerCase().includes(m.toLowerCase())); return r.length === 0 ? "" : r.map(d => `<b>${d.valor}</b>`).join('<br>'); };
+                html += `<tr><td><b>${dia}</b></td><td>${getVal('Jejum')}</td><td>${getVal('Pós café')}</td><td>${getVal('Antes do almoço')}</td><td>${getVal('Depois do almoço')}</td><td>${getVal('Antes da janta')}</td><td>${getVal('Depois da janta')}</td><td>${getVal('Dormir')}</td><td>${getVal('Madrugada')}</td></tr>`; 
+            } 
+            
+            let tituloMes = mesSel.toUpperCase();
+            if (semSel !== 'all') tituloMes += ` (SEMANA ${semSel})`;
+            
+            document.getElementById('txtMes').innerText = tituloMes; 
+            document.getElementById('txtAno').innerText = anoSel; 
+            document.getElementById('corpoRel').innerHTML = html; 
+            if(!silent) document.getElementById('modalRelatorio').style.display = "block"; 
+        };
+
+        window.exportarPDF = () => {
+            window.verRelatorio(true); // Atualiza a tabela silenciosamente para bater com a semana escolhida antes de baixar
+            const semSel = document.getElementById('selSemana').value;
+            const nomeArq = semSel === 'all' ? `Relatorio_Gabi_${document.getElementById('selMes').value}.pdf` : `Relatorio_Gabi_${document.getElementById('selMes').value}_Semana${semSel}.pdf`;
+            html2pdf().from(document.getElementById('areaRel')).set({ margin: [2,2,2,2], filename: nomeArq, jsPDF: { orientation: 'landscape' } }).save();
+        };
+
         window.limparHistorico = function() {
             if(confirm("ATENÇÃO: Isso apagará TODO o seu histórico de Glicemia! Continuar?")) {
                 localStorage.removeItem(CHAVE);
@@ -807,25 +809,27 @@
                 alert("Histórico apagado."); renderizarGlicemia();
             }
         };
-        window.verRelatorio = function() { 
-            const mesSel = document.getElementById('selMes').value; const anoSel = document.getElementById('selAno').value; 
-            const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-            const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]");
-            let html = ""; 
-            for(let dia=1; dia<=31; dia++) { 
-                const dadosDoDia = banco.filter(item => { const dataObj = new Date(item.data + "T00:00:00"); return dataObj.getDate() === dia && mesesNomes[dataObj.getMonth()] === mesSel && dataObj.getFullYear().toString() === anoSel; });
-                const getVal = (m) => { const r = dadosDoDia.filter(d => d.momento.toLowerCase().includes(m.toLowerCase())); return r.length === 0 ? "" : r.map(d => `<b>${d.valor}</b>`).join('<br>'); };
-                html += `<tr><td><b>${dia}</b></td><td>${getVal('Jejum')}</td><td>${getVal('Pós café')}</td><td>${getVal('Antes do almoço')}</td><td>${getVal('Depois do almoço')}</td><td>${getVal('Antes da janta')}</td><td>${getVal('Depois da janta')}</td><td>${getVal('Dormir')}</td><td>${getVal('Madrugada')}</td></tr>`; 
-            } 
-            document.getElementById('txtMes').innerText = mesSel.toUpperCase(); document.getElementById('txtAno').innerText = anoSel; document.getElementById('corpoRel').innerHTML = html; document.getElementById('modalRelatorio').style.display = "block"; 
-        };
+
         window.enviarWpp = function() { 
             const num = document.getElementById('wppInput').value; if(!num) return alert("Informe o número do médico."); 
             const mesSel = document.getElementById('selMes').value; const anoSel = document.getElementById('selAno').value;
-            let texto = `*RELATÓRIO GLICÊMICO - GABRIELA*\n*Mês:* ${mesSel} / ${anoSel}\n\n`;
+            const semSel = document.getElementById('selSemana').value;
             const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            const mesIdx = mesesNomes.indexOf(mesSel);
+            const diasNoMes = new Date(anoSel, mesIdx + 1, 0).getDate();
+
+            let startDay = 1; let endDay = diasNoMes;
+            if (semSel === '1') { startDay = 1; endDay = 7; }
+            else if (semSel === '2') { startDay = 8; endDay = 14; }
+            else if (semSel === '3') { startDay = 15; endDay = 21; }
+            else if (semSel === '4') { startDay = 22; endDay = 28; }
+            else if (semSel === '5') { startDay = 29; endDay = diasNoMes; }
+
+            let periodoTxt = semSel === 'all' ? `Mês: ${mesSel} / ${anoSel}` : `Mês: ${mesSel} / ${anoSel} (Semana ${semSel})`;
+            let texto = `*RELATÓRIO GLICÊMICO - GABRIELA*\n*${periodoTxt}*\n\n`;
+            
             const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]"); let temDado = false;
-            for(let dia=1; dia<=31; dia++) {
+            for(let dia=startDay; dia<=endDay; dia++) {
                 const dadosDoDia = banco.filter(item => { const dataObj = new Date(item.data + "T00:00:00"); return dataObj.getDate() === dia && mesesNomes[dataObj.getMonth()] === mesSel && dataObj.getFullYear().toString() === anoSel; });
                 if(dadosDoDia.length > 0) {
                     temDado = true; texto += `*Dia ${dia}*\n`;
@@ -834,8 +838,11 @@
                     items.forEach(i => { if(i.val) texto += `- ${i.lbl}: ${i.val}\n`; }); texto += `\n`;
                 }
             }
-            if(!temDado) texto += `Nenhuma medição registrada neste mês.`;
-            window.open(`https://wa.me/55${num}?text=${encodeURIComponent(texto)}`); 
+            if(!temDado) texto += `Nenhuma medição registrada neste período.`;
+            
+            // Limpa parênteses, espaços e traços do número e usa o link universal
+            const numLimpo = num.replace(/\D/g, '');
+            window.open(`https://api.whatsapp.com/send?phone=55${numLimpo}&text=${encodeURIComponent(texto)}`); 
         };
     </script>
 </body>
