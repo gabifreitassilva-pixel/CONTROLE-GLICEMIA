@@ -1,7 +1,7 @@
-// Aumentamos a versão para v16 para forçar o celular a limpar o erro antigo
-const CACHE_NAME = 'glicogabi-v16'; 
+// Aumentamos a versão para v30 para forçar o celular a limpar o erro antigo
+const CACHE_NAME = 'glicogabi-v30'; 
 
-// Deixamos APENAS os arquivos que realmente existem no seu projeto agora!
+// Deixamos APENAS os arquivos que realmente existem no seu projeto agora
 const ASSETS = [
   'index.html',
   'manifest.json',
@@ -34,7 +34,7 @@ self.addEventListener('activate', (e) => {
   return self.clients.claim();
 });
 
-// Evento Fetch: Carrega o app offline instantaneamente
+// Evento Fetch: Carrega o app offline
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((res) => {
