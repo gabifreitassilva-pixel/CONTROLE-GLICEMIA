@@ -131,6 +131,12 @@
         .btn-alarme { padding: 18px; border-radius: 12px; font-size: 16px; font-weight: bold; border: none; width: 100%; margin-top: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;}
         .btn-desligar { background: var(--verde); color: white; }
         .btn-soneca { background: #ffc107; color: #333; }
+        
+        /* Checkbox Dias da Semana */
+        .dia-checkbox-lbl {
+            background: white; padding: 6px 10px; border-radius: 8px; font-size: 11px; 
+            text-transform: none; display: flex; align-items: center; gap: 4px; border: 1px solid #ddd; cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -344,6 +350,18 @@
                     <option value="sirene">🚑 Som: Sirene</option>
                     <option value="suave">🎵 Som: Toque Suave</option>
                 </select>
+                
+                <label style="margin-top: 10px;">Repetir nos dias:</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px;" id="diasSemanaContainer">
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="0" checked> Dom</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="1" checked> Seg</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="2" checked> Ter</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="3" checked> Qua</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="4" checked> Qui</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="5" checked> Sex</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="6" checked> Sáb</label>
+                </div>
+
                 <button class="btn-acao" onclick="salvarLembrete()" style="margin-top: 10px; margin-bottom: 0;">Salvar Alarme</button>
             </div>
 
@@ -605,12 +623,21 @@
                 let h = (parseInt(partes[0]) + 1) % 24; 
                 let m = parseInt(partes[1]);
                 let horaAlarme = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0');
-                lembretes.push({ id: Date.now() + 1, nome: `⏰ Medir Glicose Novamente (${novoRegistro.momento})`, hora: horaAlarme, tipoSom: 'padrao' });
+                let nomeAlarmeInteligente = `⏰ Medir Glicose Novamente (${novoRegistro.momento})`;
+                
+                // Reconhece o último e sobreescreve para não criar 3 alarmes repetidos
+                let alarmeExistente = lembretes.find(l => l.nome === nomeAlarmeInteligente);
+                if (alarmeExistente) {
+                    alarmeExistente.hora = horaAlarme;
+                } else {
+                    lembretes.push({ id: Date.now() + 1, nome: nomeAlarmeInteligente, hora: horaAlarme, tipoSom: 'padrao', dias: [0,1,2,3,4,5,6] });
+                }
+
                 lembretes.sort((a, b) => a.hora.localeCompare(b.hora));
                 localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes));
                 sincronizarComNuvem('lembretes', lembretes); // <--- SYNC
                 renderizarLembretes();
-                alert(`Salvo com sucesso!\nO GlicoGabi programou um alarme para as ${horaAlarme} para você medir de novo.`);
+                alert(`Salvo com sucesso!\nO GlicoGabi ajustou o alarme para as ${horaAlarme} para você medir de novo.`);
             } catch(e) {}
 
             document.getElementById('glicemia').value = "";
@@ -893,10 +920,12 @@
             const nome = document.getElementById('nomeLembrete').value; 
             const hora = document.getElementById('horaLembrete').value;
             const tipoSom = document.getElementById('tipoSomLembrete').value || 'padrao';
+            const diasSelecionados = Array.from(document.querySelectorAll('#diasSemanaContainer input:checked')).map(cb => parseInt(cb.value));
             
             if(!nome || !hora) return alert("Preencha o nome e o horário do alarme!");
+            if(diasSelecionados.length === 0) return alert("Selecione pelo menos um dia para repetir o alarme!");
             
-            lembretes.push({ id: Date.now(), nome, hora, tipoSom }); 
+            lembretes.push({ id: Date.now(), nome, hora, tipoSom, dias: diasSelecionados }); 
             lembretes.sort((a, b) => a.hora.localeCompare(b.hora));
             
             localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes)); 
@@ -924,14 +953,19 @@
             if (lembretes.length === 0) return lista.innerHTML = "<p style='text-align:center; color:#999; font-size:12px;'>Nenhum alarme configurado.</p>";
             
             const iconesSom = { padrao: '🔔', rapido: '🚨', sirene: '🚑', suave: '🎵' };
+            const diasNomesCurto = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
             
             lembretes.forEach(l => { 
                 const icone = iconesSom[l.tipoSom] || '🔔';
+                const diasRep = l.dias || [0,1,2,3,4,5,6]; // Para manter alarmes antigos funcionando todo dia
+                let diasTexto = diasRep.length === 7 ? "Todos os dias" : diasRep.map(d => diasNomesCurto[d]).join(', ');
+
                 lista.innerHTML += `
                 <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid var(--laranja);">
                     <div>
                         <div style="font-weight: bold; font-size: 18px; color: #333;">⏰ ${l.hora}</div>
                         <div style="font-size: 14px; color: #666; margin-top: 3px;">${icone} ${l.nome}</div>
+                        <div style="font-size: 11px; color: var(--primaria); margin-top: 3px; font-weight: bold;">🔄 ${diasTexto}</div>
                     </div>
                     <button onclick="excluirLembrete(${l.id})" style="background: transparent; color: #f44336; font-size: 20px; padding: 5px; width: auto; border: none;">🗑️</button>
                 </div>`; 
@@ -940,13 +974,20 @@
 
         window.checarAlarmes = function() {
             if (lembretes.length === 0) return;
-            const agora = new Date(); const horaAtual = agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0'); const dataHoje = agora.toISOString().split('T')[0];
+            const agora = new Date(); 
+            const horaAtual = agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0'); 
+            const dataHoje = agora.toISOString().split('T')[0];
+            const diaSemanaHoje = agora.getDay(); // 0 a 6 (Domingo a Sábado)
+
             lembretes.forEach(l => {
-                if (l.hora === horaAtual) {
-                    const chaveDisparo = `${l.id}_${dataHoje}_${horaAtual}`;
-                    if (!lembretesDisparadosHoje[chaveDisparo]) { 
-                        window.dispararNotificacao(l.nome, l.tipoSom || 'padrao'); 
-                        lembretesDisparadosHoje[chaveDisparo] = true; 
+                const diasRepeticao = l.dias || [0,1,2,3,4,5,6]; // Fallback pra garantir o diário
+                if (diasRepeticao.includes(diaSemanaHoje)) {
+                    if (l.hora === horaAtual) {
+                        const chaveDisparo = `${l.id}_${dataHoje}_${horaAtual}`;
+                        if (!lembretesDisparadosHoje[chaveDisparo]) { 
+                            window.dispararNotificacao(l.nome, l.tipoSom || 'padrao'); 
+                            lembretesDisparadosHoje[chaveDisparo] = true; 
+                        }
                     }
                 }
             });
