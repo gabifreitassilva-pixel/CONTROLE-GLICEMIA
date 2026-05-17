@@ -339,6 +339,10 @@
                     <option value="sirene">🚑 Som: Sirene</option>
                     <option value="urgente">⚠️ Som: Alerta Urgente</option>
                     <option value="suave">🎵 Som: Toque Suave</option>
+                    <option value="ringtone023">🎵 Som: Melodia 1</option>
+                    <option value="ringtone030">🎵 Som: Melodia 2</option>
+                    <option value="ringtone057">🎵 Som: Melodia 3</option>
+                    <option value="ringtone020">🎵 Som: Melodia 4</option>
                     <option value="custom">🎵 Meu Som Personalizado</option>
                 </select>
                 
@@ -469,7 +473,7 @@
         let intervalVibrar = null;
         let msgAlarmeAtual = "";
         let tipoSomAlarmeAtual = "padrao";
-        let audioCustomPlayer = null; // Guardará a música importada em reprodução
+        let audioCustomPlayer = null; 
 
         // Variaveis de dados
         let consultas = JSON.parse(localStorage.getItem('gabi_consultas')) || [];
@@ -578,7 +582,6 @@
             const wppMedicoSalvo = localStorage.getItem('gabi_wpp_medico');
             if(wppMedicoSalvo) document.getElementById('wppMedico').value = wppMedicoSalvo;
 
-            // Mostrar se já existe som customizado local carregado
             const somSalvo = localStorage.getItem('gabi_som_custom_b64');
             if(somSalvo) {
                 document.getElementById('statusSomCustom').innerText = "Toque importado ativo localmente! ✅";
@@ -1008,18 +1011,30 @@
 
         window.tocarSom = function(tipo) {
             try { 
-                // Se for o som personalizado importado
-                if (tipo === 'custom') {
-                    const somSalvo = localStorage.getItem('gabi_som_custom_b64');
-                    if (!somSalvo) {
-                        tipo = 'padrao'; // Fallback se não tiver carregado som
-                    } else {
+                const ringtoneUrls = {
+                    ringtone023: "http://googleusercontent.com/file_content/0",
+                    ringtone030: "http://googleusercontent.com/file_content/1",
+                    ringtone057: "http://googleusercontent.com/file_content/2",
+                    ringtone020: "http://googleusercontent.com/file_content/3"
+                };
+
+                if (ringtoneUrls[tipo] || tipo === 'custom') {
+                    let somSrc = ringtoneUrls[tipo];
+                    if (tipo === 'custom') {
+                        somSrc = localStorage.getItem('gabi_som_custom_b64');
+                        if (!somSrc) tipo = 'padrao'; 
+                    }
+                    if (somSrc) {
                         if (!audioCustomPlayer) {
-                            audioCustomPlayer = new Audio(somSalvo);
+                            audioCustomPlayer = new Audio(somSrc);
+                            audioCustomPlayer.dataset.tipo = tipo;
+                        } else if (audioCustomPlayer.dataset.tipo !== tipo) {
+                            audioCustomPlayer.pause();
+                            audioCustomPlayer = new Audio(somSrc);
+                            audioCustomPlayer.dataset.tipo = tipo;
                         }
-                        // Só dá o play se não estiver tocando no exato momento
                         if (audioCustomPlayer.paused) {
-                            audioCustomPlayer.play().catch(e => console.log("Erro ao tocar som custom:", e));
+                            audioCustomPlayer.play().catch(e => console.log("Erro ao tocar som:", e));
                         }
                         return;
                     }
@@ -1085,8 +1100,7 @@
         window.ouvirToqueEscolhido = function() {
             const som = document.getElementById('tipoSomLembrete').value || 'padrao';
             window.tocarSom(som);
-            // Se for customizado e já terminou, reinicia para o teste
-            if (som === 'custom' && audioCustomPlayer) {
+            if ((som === 'custom' || som.startsWith('ringtone')) && audioCustomPlayer) {
                 audioCustomPlayer.currentTime = 0;
             }
         };
@@ -1118,7 +1132,7 @@
                 document.getElementById('editLembreteId').value = "-1";
                 document.getElementById('btnSalvarLembrete').innerText = "Salvar Alarme";
                 document.getElementById('lblTituloAlarme').innerText = "Criar Novo Alarme";
-                alert("Alarme updated com sucesso!");
+                alert("Alarme atualizado com sucesso!");
             }
             
             lembretes.sort((a, b) => a.hora.localeCompare(b.hora));
@@ -1172,7 +1186,7 @@
             if (areaPerm) { areaPerm.style.display = ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") ? 'block' : 'none'; }
             if (lembretes.length === 0) return lista.innerHTML = "<p style='text-align:center; color:#999; font-size:12px;'>Nenhum alarme configurado.</p>";
             
-            const iconesSom = { padrao: '🔔', rapido: '🚨', triplo: '📟', sirene: '🚑', urgente: '⚠️', suave: '🎵', custom: '🎵' };
+            const iconesSom = { padrao: '🔔', rapido: '🚨', triplo: '📟', sirene: '🚑', urgente: '⚠️', suave: '🎵', ringtone023: '🎵', ringtone030: '🎵', ringtone057: '🎵', ringtone020: '🎵', custom: '🎵' };
             const diasNomesCurto = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
             
             lembretes.forEach(l => { 
@@ -1229,7 +1243,7 @@
         };
 
         window.dispararNotificacao = function(mensagem, tipoSom = 'padrao') {
-            msgAlarmeAtual = mensagem;
+            msgAlarmeAtual = message;
             tipoSomAlarmeAtual = tipoSom;
             
             document.getElementById('textoModalAlarme').innerText = mensagem;
@@ -1379,7 +1393,7 @@
                     texto += `🌙 *Noite* ➔ Dormir: ${getValStr('Dormir')} | Madrug: ${getValStr('Madrugada')}\n\n`;
                 }
             }
-            if(!temDado) text += `Nenhuma medição registrada neste período.`;
+            if(!temDado) texto += `Nenhuma medição registrada neste período.`;
             
             const numLimpo = num.replace(/\D/g, '');
             window.open(`https://api.whatsapp.com/send?phone=55${numLimpo}&text=${encodeURIComponent(texto)}`); 
