@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>GlicoGabi</title>
     
-    <link rel="manifest" href="MANIFEST.JSON">
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="ICONE.png">
     <meta name="theme-color" content="#7e57ff">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
+    <!-- Bibliotecas Externas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -23,565 +24,1255 @@
             --lavanda-claro: #f4f0ff;
             --lavanda-medio: #e3d9ff;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #f8f9fa; color: #333; padding-bottom: 30px; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        /* Cabeçalho Fixo */
-        .header { background: linear-gradient(135deg, var(--primaria), #6236ff); color: white; padding: 25px 20px; text-align: center; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; box-shadow: 0 4px 12px rgba(126,87,255,0.3); margin-bottom: 20px; position: relative; }
-        .header h1 { font-size: 26px; font-weight: 700; letter-spacing: 0.5px; }
-        .header p { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%; max-width: 100vw;
+            background-color: var(--primaria); 
+            display: flex; flex-direction: column; 
+            font-family: 'Segoe UI', sans-serif; overflow: hidden; 
+        }
+
+        .content-container { 
+            flex: 1; background: white; border-radius: 0 0 25px 25px; 
+            overflow-y: auto; overflow-x: hidden; width: 100%; 
+        }
+
+        .tela { display: none; width: 100%; min-height: 100%; background: white; padding-bottom: 20px; }
+        .tela.active { display: block; }
+
+        .nav-tabs { 
+            display: flex; width: 100%; background: var(--primaria); 
+            padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); 
+            justify-content: space-around; align-items: center; 
+        }
+
+        .tab-btn { 
+            background: none; border: none; color: white; cursor: pointer; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            flex: 1; opacity: 0.6; transition: 0.2s; 
+            min-width: 0; /* Trava importante para telas pequenas */
+            padding: 0 2px;
+        }
+        .tab-btn i { font-size: 20px; margin-bottom: 3px; font-style: normal; }
+        .tab-btn span { 
+            font-size: 8px; font-weight: bold; text-transform: uppercase; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+        }
+        .tab-btn.active { opacity: 1; }
+
+        /* Ajuste fino para celulares muito estreitos */
+        @media (max-width: 380px) {
+            .tab-btn span { font-size: 7px; }
+            .tab-btn i { font-size: 17px; margin-bottom: 2px; }
+            .nav-tabs { padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
+        }
+
+        .header { background: var(--primaria); color: white; padding: 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .header p { margin: 5px 0 0 0; font-size: 14px; opacity: 0.8;}
         
-        .container { max-width: 500px; margin: 0 auto; padding: 0 16px; }
+        .input-area { background: #f4f0ff; margin: 15px; padding: 15px; border-radius: 20px; display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 11px; font-weight: bold; color: var(--primaria); text-transform: uppercase; margin-top: 5px; }
+        select, input, button, textarea { padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 14px; width: 100%; box-sizing: border-box; }
+        button { background: var(--primaria); color: white; font-weight: bold; border: none; cursor: pointer; }
+        .btn-acao { background: var(--primaria); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 8px; }
+        .btn-pdf { background: #9b59b6; } .btn-wpp { background: #25d366; }
         
-        /* Cartões */
-        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.02); }
-        .card-title { font-size: 16px; font-weight: 600; color: #444; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .history-list { padding: 0 15px 20px; margin-top: 5px; }
+        .card { background: white; border-radius: 15px; margin-bottom: 12px; padding: 15px; border-left: 5px solid var(--laranja); box-shadow: 0 2px 8px rgba(0,0,0,.05); position: relative; }
+        .card-header { font-size: 14px; font-weight: bold; color: var(--primaria); margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .card-val { font-size: 24px; font-weight: bold; display: flex; align-items: baseline; gap: 8px; }
+        .btn-excluir { color: #ff4444; font-weight: bold; cursor: pointer; border: none; background: none; width: auto; padding: 0; font-size: 16px; }
         
-        /* Formulários */
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #666; margin-bottom: 6px; }
-        .input-control { width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; outline: none; transition: all 0.2s; background-color: #fafafa; }
-        .input-control:focus { border-color: var(--primaria); background-color: white; box-shadow: 0 0 0 3px rgba(126,87,255,0.15); }
-        select.input-control { appearance: none; background-image: url("data:image/svg+xml;utf8,<svg fill='%23666' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
+        .group-card { background: white; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 6px solid var(--laranja); overflow: hidden; }
+        .group-header { padding: 10px 15px; font-weight: bold; font-size: 13px; color: var(--primaria); display: flex; justify-content: space-between; background: #f9f9f9; align-items: center; }
+        .group-header button { width: auto; background: none; color: red; padding: 0; font-size: 18px;}
+        .main-entry { padding: 15px; }
+        .doc-name { font-size: 18px; font-weight: bold; color: #333; }
+
+        .tabs { display: flex; background: var(--lavanda-claro); margin: 10px 15px; border-radius: 12px; padding: 5px; }
+        .tabs .tab-btn-inner { flex: 1; padding: 12px; border: none; background: none; font-weight: bold; color: var(--primaria); cursor: pointer; border-radius: 8px; font-size: 12px; }
+        .tabs .tab-btn-inner.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,.1); }
+        .section-box { background: var(--lavanda-claro); margin: 0 15px 15px; padding: 15px; border-radius: 20px; border: 1px solid var(--lavanda-medio); }
         
-        /* Botões */
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .btn-primario { background-color: var(--primaria); color: white; }
-        .btn-primario:active { transform: scale(0.98); background-color: #693be6; }
-        .btn-sucesso { background-color: var(--verde); color: white; }
-        .btn-sucesso:active { transform: scale(0.98); background-color: #3d8b40; }
-        .btn-danger { background-color: var(--vermelho); color: white; }
-        .btn-danger:active { transform: scale(0.98); background-color: #d32f2f; }
-        .btn-outline { background-color: white; border: 1px solid #ddd; color: #555; }
-        .btn-outline:active { background-color: #f5f5f5; }
+        /* Tabela responsiva (rolagem lateral no celular) */
+        .table-responsive { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; border-radius: 10px; max-width: 100%; }
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 320px; }
+        th { background: var(--primaria); color: white; padding: 10px; font-size: 12px; text-align: left; }
+        td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .hidden { display: none !important; }
+
+        /* Modal Relatório */
+        #modalRelatorio { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: none; overflow: auto; }
+        .rel-topo { background: var(--primaria); color: white; padding: 15px; display: flex; justify-content: space-between; position: sticky; top: 0; }
+        .folha { padding: 8mm; width: 275mm; margin: auto; background: white; color: black; }
+        .tab-rel { width: 100%; border-collapse: collapse; font-size: 8.5pt; table-layout: fixed; }
+        .tab-rel th { border: 1px solid var(--primaria); padding: 5px; background: var(--lavanda-medio); color: var(--primaria); }
+        .tab-rel td { border: 1px solid var(--lavanda-medio); padding: 3px; text-align: center; height: 5.8mm; word-wrap: break-word; }
+
+        .resumo-dia { text-align: center; font-size: 12px; color: #555; margin-bottom: 10px; font-weight: bold; }
+
+        /* Modal Alarme Inteligente */
+        #modalAlarme { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); z-index: 99999; display: none; 
+            justify-content: center; align-items: center; flex-direction: column; padding: 20px;
+        }
+        .alarme-box { 
+            background: white; border-radius: 20px; padding: 30px 20px; width: 100%; max-width: 400px; 
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            animation: tremer 0.6s infinite alternate; border: 4px solid var(--primaria);
+        }
+        @keyframes tremer {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            100% { transform: translate(-1px, -2px) rotate(-1deg); }
+        }
+        .btn-alarme { padding: 18px; border-radius: 12px; font-size: 16px; font-weight: bold; border: none; width: 100%; margin-top: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;}
+        .btn-desligar { background: var(--verde); color: white; }
+        .btn-soneca { background: #ffc107; color: #333; }
         
-        /* Grid de Botões Rápidos */
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        
-        /* Filtros */
-        .filtro-container { display: flex; gap: 8px; margin-bottom: 16px; }
-        .filtro-container .form-group { flex: 1; margin-bottom: 0; }
-        
-        /* Lista de Histórico */
-        .item-historico { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .item-historico:last-child { border-bottom: none; }
-        .item-info .item-meta { font-size: 12px; color: #888; margin-bottom: 2px; }
-        .item-info .item-momento { font-size: 14px; font-weight: 500; color: #444; }
-        .item-valor-acao { display: flex; align-items: center; gap: 12px; }
-        .badge-valor { font-size: 16px; font-weight: 700; padding: 6px 12px; border-radius: 20px; color: white; text-align: center; min-width: 65px; }
-        .badge-normal { background-color: var(--verde); }
-        .badge-alerta { background-color: var(--laranja); }
-        .badge-critico { background-color: var(--vermelho); }
-        .badge-insulina { background-color: var(--azul); }
-        .btn-deletar { background: none; border: none; color: #ccc; cursor: pointer; padding: 4px; border-radius: 50%; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
-        .btn-deletar:hover, .btn-deletar:active { color: var(--vermelho); background-color: #fff0f0; }
-        
-        /* Seção Oculta para PDF */
-        #pdf-conteudo { display: none; background: white; padding: 30px; }
-        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-        .pdf-table th, .pdf-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        .pdf-table th { background-color: #7e57ff; color: white; }
-        .pdf-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #7e57ff; padding-bottom: 10px; }
-        
-        /* Telas de Loading e Avisos */
-        .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; color: #888; font-size: 14px; gap: 8px; }
-        .spinner { width: 24px; height: 24px; border: 3px solid rgba(126,87,255,0.1); border-radius: 50%; border-top-color: var(--primaria); animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
-        .vazio { text-align: center; padding: 30px 10px; color: #999; font-size: 14px; }
-        
-        /* Notificação Flutuante */
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background-color: #333; color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; display: flex; align-items: center; gap: 8px; }
-        .toast.show { transform: translateX(-50%) translateY(0); }
-        
-        /* Botão de Instalação customizado (Opcional se quiser usar) */
-        #btnInstalar { display: none; background-color: #fff; color: var(--primaria); border: 2px solid var(--primaria); margin-bottom: 15px; }
+        /* Checkbox Dias da Semana */
+        .dia-checkbox-lbl {
+            background: white; padding: 6px 10px; border-radius: 8px; font-size: 11px; 
+            text-transform: none; display: flex; align-items: center; gap: 4px; border: 1px solid #ddd; cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>GlicoGabi</h1>
-        <p>Controle de Glicemia & Insulina</p>
-    </div>
-
-    <div class="container">
+    <div class="content-container">
         
-        <button id="btnInstalar" class="btn">📲 Instalar Aplicativo GlicoGabi</button>
-
-        <div class="card">
-            <div class="card-title">📝 Novo Registro</div>
+        <!-- 1. TELA HOME -->
+        <div id="tela-home" class="tela active">
+            <div class="header">
+                <h1>GlicoGabi</h1><p>Controle de Glicemia</p>
+            </div>
             
-            <div class="form-group">
-                <label>Tipo de Registro</label>
-                <select id="tipo" class="input-control" onchange="alternarCampos()">
-                    <option value="Glicemia">🩸 Glicemia (mg/dL)</option>
-                    <option value="Insulina">💉 Insulina (Unidades)</option>
+            <div id="boxDosesHome" class="section-box" style="margin: 10px 15px; padding: 10px; text-align: center; display: none;">
+                <div style="font-size: 11px; font-weight: bold; color: var(--primaria); margin-bottom: 5px;">💉 MINHAS PRESCRIÇÕES</div>
+                <div id="conteudoDosesHome" style="font-size: 14px; font-weight: bold; color: #333;"></div>
+            </div>
+
+            <div class="input-area">
+                <select id="momento">
+                    <option>Jejum</option><option>Pós café</option><option>Antes do almoço</option>
+                    <option>Depois do almoço</option><option>Antes da janta</option><option>Depois da janta</option>
+                    <option>Antes de Dormir</option><option>Madrugada</option>
                 </select>
+                
+                <input type="number" id="glicemia" placeholder="Glicemia (mg/dL)">
+                
+                <div style="display: flex; gap: 5px;">
+                    <input type="date" id="data_r" style="flex: 2;">
+                    <input type="time" id="hora_r" style="flex: 1;">
+                </div>
+                <button onclick="salvarGlicemia()" style="padding: 15px; font-size: 16px;">Gravar Medição</button>
             </div>
 
-            <div class="form-group">
-                <label id="label-valor">Valor da Glicemia (mg/dL)</label>
-                <input type="number" id="valor" class="input-control" placeholder="Ex: 110" inputmode="numeric">
-            </div>
+            <div id="resumoDia" class="resumo-dia"></div>
 
-            <div class="form-group">
-                <label>Momento / Período</label>
-                <select id="momento" class="input-control">
-                    </select>
-            </div>
-
-            <div class="form-group">
-                <label>Data</label>
-                <input type="date" id="data" class="input-control">
-            </div>
-
-            <div class="form-group">
-                <label>Horário</label>
-                <input type="time" id="hora" class="input-control">
-            </div>
-
-            <button class="btn btn-primario" onclick="salvarRegistro()">💾 Salvar Registro</button>
+            <div id="historicoGlicemia" class="history-list"></div>
         </div>
 
-        <div class="card">
-            <div class="card-title">📅 Histórico de Medições</div>
+        <!-- 2. TELA CONSULTAS -->
+        <div id="tela-consultas" class="tela">
+            <div class="header"><h1>Consultas</h1><p>Agenda da Gabriela</p></div>
+            <div class="input-area">
+                <input type="hidden" id="editConsultaId" value="-1">
+                <label>Médico ou Especialidade</label><input type="text" id="medico" placeholder="Ex: Dr. João">
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;"><label>Data</label><input type="date" id="data_consulta"></div>
+                    <div style="flex: 1;"><label>Hora</label><input type="time" id="hora_consulta"></div>
+                </div>
+                <label>Local</label><input type="text" id="local" placeholder="Endereço">
+                <label>Tipo</label><select id="tipo"><option value="Consulta">🩺 Consulta</option><option value="Exame">🧪 Exame</option></select>
+                <button id="btnSalvarConsulta" class="btn-acao" onclick="salvarConsulta()" style="margin-bottom: 0;">Salvar Agendamento</button>
+            </div>
+            <div id="historicoConsultas" class="history-list"></div>
+        </div>
+
+        <!-- 3. TELA LINHA DO TEMPO (HISTÓRICO) -->
+        <div id="tela-historico" class="tela">
+            <div class="header"><h1>Linha do Tempo</h1><p>Eventos importantes e evolução</p></div>
+            <div class="input-area">
+                <input type="hidden" id="editHistId" value="-1">
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>Mês</label>
+                        <select id="mes_hist">
+                            <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
+                            <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+                            <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+                            <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;"><label>Ano</label><input type="number" id="ano_hist" value="2024"></div>
+                </div>
+                <label>Descrição</label><textarea id="descricao_hist" placeholder="Ex: Mudança de insulina, início de academia..."></textarea>
+                <button id="btnSalvarHist" class="btn-acao" style="background-color: var(--laranja); margin-bottom: 0;" onclick="salvarLinhaTempo()">Salvar Dados</button>
+            </div>
+            <div id="historicoEventos" class="history-list"></div>
+        </div>
+
+        <!-- 4. TELA ESTOQUE -->
+        <div id="tela-estoque" class="tela">
+            <div class="header"><h1>Estoque</h1><p>Controle de insumos</p></div>
             
-            <div class="filtro-container">
-                <div class="form-group">
-                    <label>Mês</label>
-                    <select id="filtro-mes" class="input-control" onchange="carregarHistorico()"></select>
+            <div class="input-area">
+                <label>Adicionar Novo Insumo</label>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <input type="text" id="nomeInsumo" placeholder="Ex: Fitas Accu-Chek" style="width: 100%;">
+                    <div style="display: flex; gap: 5px;">
+                        <input type="number" id="qtdInsumo" placeholder="Quantidade" style="flex: 1;">
+                        <input type="date" id="validadeInsumo" style="flex: 2;">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Ano</label>
-                    <select id="filtro-ano" class="input-control" onchange="carregarHistorico()"></select>
-                </div>
+                <button class="btn-acao" onclick="adicionarInsumo()" style="margin-top: 5px; margin-bottom: 0;">Cadastrar Insumo</button>
             </div>
 
-            <div id="historico-lista">
-                <div class="loading"><div class="spinner"></div>Carregando registros...</div>
+            <div class="section-box" style="margin-top: 15px;">
+                <label>MEU ESTOQUE ATUAL</label>
+                <div id="listaEstoque" style="margin-top: 10px;"></div>
             </div>
         </div>
 
-        <div class="btn-grid">
-            <button class="btn btn-sucesso" onclick="compartilharWhatsApp()">💬 Ver p/ WhatsApp</button>
-            <button class="btn btn-outline" onclick="gerarPDF()">📄 Gerar Relatório PDF</button>
+        <!-- 5. TELA AJUSTES -->
+        <div id="tela-ajustes" class="tela">
+            <div class="header"><h1>Ajustes</h1><p>Configurações e Relatórios</p></div>
+            
+            <!-- BLOCO DE SINCRONIZAÇÃO NUVEM -->
+            <div class="section-box" style="background: #fff; border: 2px solid var(--verde); margin-top: 15px;">
+                <label style="color: var(--verde);">☁️ SINCRONIZAÇÃO EM NUVEM</label>
+                <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Crie um código secreto. Use o mesmo código no PC e no Celular para manter os dados iguais e os alarmes sincronizados.</p>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <input type="text" id="inputSyncCode" placeholder="Ex: GABI2026" style="width: 100%; text-transform: uppercase; margin-bottom: 0;">
+                    <button class="btn-acao" onclick="conectarNuvem()" style="width: 100%; margin-bottom: 0; background: var(--verde);">Conectar</button>
+                </div>
+                <p id="statusSync" style="font-size: 12px; color: var(--primaria); margin-top: 10px; font-weight: bold;">Status: Local (Desconectado)</p>
+            </div>
+
+            <div class="tabs">
+                <button id="btnDoses" class="tab-btn-inner active" onclick="toggleAbaAjustes('doses')">Prescrições</button>
+                <button id="btnConfig" class="tab-btn-inner" onclick="toggleAbaAjustes('config')">Gerar Relatório</button>
+            </div>
+            
+            <div id="abaDoses">
+                <div class="section-box">
+                    <label>MINHAS MEDICAÇÕES (PRESCRIÇÃO)</label>
+                    <div style="display:flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                        <input type="hidden" id="editIdx" value="-1">
+                        <input type="text" id="nomeMed" placeholder="Medicação" style="width: 100%; margin-bottom: 0;">
+                        <select id="horaMed" style="width: 100%; margin-bottom: 0; padding: 12px; border-radius: 10px; border: 1px solid #ddd;">
+                            <option value="" disabled selected>Selecione o Horário</option>
+                            <option value="🌅 Jejum / Ao Acordar">🌅 Jejum / Ao Acordar</option>
+                            <option value="☕ Antes do Café">☕ Antes do Café</option>
+                            <option value="☕ Pós Café">☕ Pós Café</option>
+                            <option value="🍽️ Antes do Almoço">🍽️ Antes do Almoço</option>
+                            <option value="🍛 Pós Almoço">🍛 Pós Almoço</option>
+                            <option value="🌇 Antes da Janta">🌇 Antes da Janta</option>
+                            <option value="🍲 Pós Janta">🍲 Pós Janta</option>
+                            <option value="🌙 Antes de Dormir">🌙 Antes de Dormir</option>
+                            <option value="🌌 Madrugada">🌌 Madrugada</option>
+                        </select>
+                        <input type="text" id="qtdMed" placeholder="Dose (Ex: 15 UI)" style="width: 100%; margin-bottom: 0;">
+                    </div>
+                    <button class="btn-acao" onclick="salvarDose()" style="margin-top: 15px;">Salvar Prescrição</button>
+                    
+                    <div class="table-responsive" style="margin-top: 15px;">
+                        <table style="margin-top: 0;">
+                            <thead><tr><th>Medicação</th><th>Horário</th><th>Dose</th><th>Ações</th></tr></thead>
+                            <tbody id="listaMeds"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-top: 25px; border-top: 1px solid #ddd; padding-top: 15px;">
+                        <label>📜 HISTÓRICO DE ALTERAÇÕES</label>
+                        <div id="listaHistoricoMeds" style="margin-top: 10px; max-height: 150px; overflow-y: auto; font-size: 12px; color: #555;">
+                            <!-- Histórico renderizado aqui -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="abaConfig" class="hidden">
+                <div class="section-box">
+                    <label>GERAR RELATÓRIO E ENVIAR</label>
+                    <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Selecione o período exato (mês ou semana) para gerar o relatório.</p>
+                    
+                    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                        <input type="text" id="wppGabi" value="11989529685" placeholder="WhatsApp Gabriela" onchange="salvarWpp()" style="flex: 1; margin-bottom: 0; font-size: 12px;">
+                        <input type="text" id="wppMedico" placeholder="WhatsApp Médico" onchange="salvarWpp()" style="flex: 1; margin-bottom: 0; font-size: 12px;">
+                    </div>
+
+                    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                        <select id="selMes" style="flex: 2; margin-bottom:0;">
+                            <option value="Janeiro">Janeiro</option><option value="Fevereiro">Fevereiro</option>
+                            <option value="Março">Março</option><option value="Abril">Abril</option>
+                            <option value="Maio">Maio</option><option value="Junho">Junho</option>
+                            <option value="Julho">Julho</option><option value="Agosto">Agosto</option>
+                            <option value="Setembro">Setembro</option><option value="Outubro">Outubro</option>
+                            <option value="Novembro">Novembro</option><option value="Dezembro">Dezembro</option>
+                        </select>
+                        <input type="number" id="selAno" style="flex: 1; margin-bottom:0;" value="2026">
+                    </div>
+
+                    <select id="selSemana" style="width: 100%; margin-bottom: 15px; padding: 12px; border-radius: 10px; border: 1px solid #ddd;">
+                        <option value="all">Mês Completo</option>
+                        <option value="1">Semana 1 (Dias 1 a 7)</option>
+                        <option value="2">Semana 2 (Dias 8 a 14)</option>
+                        <option value="3">Semana 3 (Dias 15 a 21)</option>
+                        <option value="4">Semana 4 (Dias 22 a 28)</option>
+                        <option value="5">Semana 5 (Dias 29 ao fim)</option>
+                    </select>
+                    
+                    <button class="btn-acao" onclick="verRelatorio()">1. Visualizar Planilha</button>
+                    <button class="btn-acao btn-pdf" onclick="exportarPDF()">2. Baixar PDF</button>
+                    <button class="btn-acao btn-wpp" onclick="enviarWpp()">3. Enviar por WhatsApp</button>
+                    
+                    <button class="btn-acao" onclick="limparHistorico()" style="background:#f44336; margin-top: 30px;">⚠️ Apagar Todo Histórico</button>
+                </div>
+            </div>
         </div>
-        
+
+        <!-- 6. TELA ALERTAS (LEMBRETES) -->
+        <div id="tela-alertas" class="tela">
+            <div class="header"><h1>Alertas</h1><p>Rotina Diária</p></div>
+            
+            <div class="input-area">
+                <label>Criar Novo Alarme</label>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="nomeLembrete" placeholder="Ex: Medir Glicose / Tomar NPH" style="flex: 2;">
+                    <input type="time" id="horaLembrete" style="flex: 1;">
+                </div>
+                <select id="tipoSomLembrete" style="margin-top: 5px; width: 100%;">
+                    <option value="padrao">🔔 Som: Bipe Padrão</option>
+                    <option value="rapido">🚨 Som: Bipe Rápido</option>
+                    <option value="sirene">🚑 Som: Sirene</option>
+                    <option value="suave">🎵 Som: Toque Suave</option>
+                </select>
+                
+                <label style="margin-top: 10px;">Repetir nos dias:</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px;" id="diasSemanaContainer">
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="0" checked> Dom</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="1" checked> Seg</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="2" checked> Ter</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="3" checked> Qua</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="4" checked> Qui</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="5" checked> Sex</label>
+                    <label class="dia-checkbox-lbl"><input type="checkbox" value="6" checked> Sáb</label>
+                </div>
+
+                <button class="btn-acao" onclick="salvarLembrete()" style="margin-top: 10px; margin-bottom: 0;">Salvar Alarme</button>
+            </div>
+
+            <div class="section-box" style="margin-top: 15px; text-align: center; display: none;" id="areaPermissao">
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Para receber avisos na tela do celular e PC, ative as notificações.</p>
+                <button onclick="solicitarPermissaoNotificacao()" style="background: var(--verde); font-size: 14px; padding: 10px; width: 100%; border-radius: 10px; color: white; border: none; font-weight: bold;">Ativar Notificações 🔔</button>
+            </div>
+
+            <div class="section-box" style="margin-top: 15px;">
+                <label>MEUS ALARMES ATIVOS</label>
+                <div id="listaLembretes" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+
     </div>
 
-    <div id="toast" class="toast"></div>
-
-    <div id="pdf-conteudo">
-        <div class="pdf-header">
-            <h2>Relatório de Controle Glicêmico - GlicoGabi</h2>
-            <p id="pdf-subtitulo"></p>
-        </div>
-        <div id="pdf-tabela-espaco"></div>
+    <!-- MENU INFERIOR -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="navegar('tela-home', this)"><i>🏠</i><span>Home</span></button>
+        <button class="tab-btn" onclick="navegar('tela-consultas', this)"><i>🩺</i><span>Consultas</span></button>
+        <button class="tab-btn" onclick="navegar('tela-historico', this)"><i>📅</i><span>Histórico</span></button>
+        <button class="tab-btn" onclick="navegar('tela-estoque', this)"><i>📦</i><span>Estoque</span></button>
+        <button class="tab-btn" onclick="navegar('tela-alertas', this)"><i>🔔</i><span>Alertas</span></button>
+        <button class="tab-btn" onclick="navegar('tela-ajustes', this)"><i>⚙️</i><span>Ajustes</span></button>
     </div>
 
+    <!-- MODAL DO RELATÓRIO PDF -->
+    <div id="modalRelatorio">
+        <div class="rel-topo"><b>RELATÓRIO MÉDICO</b><button onclick="fecharRelatorio()" style="width:auto; background:none; border:none; color:white; font-weight:bold;">FECHAR X</button></div>
+        <div id="areaRel" class="folha">
+            <h2 style="text-align:center; color: var(--primaria); font-family: sans-serif; margin-bottom: 5px;">CONTROLE GLICÊMICO - GABRIELA</h2>
+            <h4 style="text-align:center; margin-top: 0; font-family: sans-serif; color: #555;">MÊS: <span id="txtMes"></span> / <span id="txtAno"></span></h4>
+            <p style="font-size: 9px; text-align: center; color: #666;">Valores acompanhados pelo símbolo 💉 indicam a dose de insulina aplicada no momento.</p>
+            <table class="tab-rel">
+                <thead>
+                    <tr>
+                        <th rowspan="2" style="width:10mm">Dia</th>
+                        <th colspan="2">Café da Manhã</th>
+                        <th colspan="2">Almoço</th>
+                        <th colspan="2">Jantar</th>
+                        <th rowspan="2">Antes Dormir</th>
+                        <th rowspan="2">Madrugada</th>
+                    </tr>
+                    <tr>
+                        <th>Antes</th><th>Depois</th>
+                        <th>Antes</th><th>Depois</th>
+                        <th>Antes</th><th>Depois</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoRel"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL DO ALARME NA TELA -->
+    <div id="modalAlarme">
+        <div class="alarme-box">
+            <div style="font-size: 50px; margin-bottom: 5px;">⏰</div>
+            <h2 style="color: var(--vermelho); margin: 0 0 10px; text-transform: uppercase;">Atenção!</h2>
+            <p id="textoModalAlarme" style="font-size: 22px; font-weight: bold; color: #333; margin-bottom: 25px; line-height: 1.3;"></p>
+            
+            <button class="btn-alarme btn-desligar" onclick="pararAlarme()">✔️ JÁ FIZ / DESLIGAR</button>
+            <button class="btn-alarme btn-soneca" onclick="sonecaAlarme()">💤 Lembrar em 5 Minutos</button>
+        </div>
+    </div>
+
+    <!-- IMPORTAÇÃO E LÓGICA DO FIREBASE COMO MÓDULO -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // SUA CONFIGURAÇÃO DO FIREBASE (MANTIDA ORIGINAL)
-        const firebaseConfig = {
-            databaseURL: "https://glicemia-1ab57-default-rtdb.firebaseio.com/"
-        };
+        // ==============================================================
+        // CONFIGURAÇÃO DO FIREBASE (COM AS CHAVES DO SEU PROJETO REAL)
+        // ==============================================================
+        let firebaseConfig;
+        let appId = 'default-app-id';
+
+        if (typeof __firebase_config !== 'undefined') {
+            // Se estiver rodando dentro do meu simulador (Canvas), usa o banco automático
+            firebaseConfig = JSON.parse(__firebase_config);
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        } else {
+            // SEU BANCO DE DADOS REAL - CONFIGURADO!
+            firebaseConfig = {
+                apiKey: "AIzaSyBLaOopjGwdocj8X32_3DMAKyjomT7jik0",
+                authDomain: "glicemia-1ab57.firebaseapp.com",
+                projectId: "glicemia-1ab57",
+                storageBucket: "glicemia-1ab57.firebasestorage.app",
+                messagingSenderId: "861904845550",
+                appId: "1:861904845550:web:b7d10603e4a950c07ad1ff",
+                measurementId: "G-CG82DZP6CP"
+            };
+        }
 
         const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        let userId = null;
-        let registrosLocais = [];
+        // Variáveis Globais do Sistema
+        const CHAVE = "gabi_database_v2";
+        const CHAVE_ESTOQUE = "gabi_estoque";
+        const CHAVE_LEMBRETES = "gabi_lembretes";
+        
+        let currentUser = null;
+        let isSyncing = false; // Evita loop infinito de upload/download
+        let syncCode = localStorage.getItem('gabi_sync_code') || '';
+        let lembretesDisparadosHoje = {}; 
+        let unsubscribeSnapshot = null;
 
-        // Nomes dos Meses por Extenso
-        const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        // Variaveis de Áudio e Alarme na tela
+        let intervalAudio = null;
+        let msgAlarmeAtual = "";
+        let tipoSomAlarmeAtual = "padrao";
 
-        // Elementos Globais de Controle de Interface
-        const selectMes = document.getElementById("filtro-mes");
-        const selectAno = document.getElementById("filtro-ano");
+        // Variaveis de dados
+        let consultas = JSON.parse(localStorage.getItem('gabi_consultas')) || [];
+        let eventos = JSON.parse(localStorage.getItem('gabi_linha_tempo')) || [];
+        let lembretes = JSON.parse(localStorage.getItem(CHAVE_LEMBRETES)) || [];
+        let dbDoses = JSON.parse(localStorage.getItem('gabi_ajustes_vFinal')) || [];
+        let historicoDoses = JSON.parse(localStorage.getItem('gabi_historico_doses')) || [];
 
-        // Autenticação de Usuário Anônimo
-        async function initAuth() {
+        // ==============================================================
+        // AUTENTICAÇÃO ANÔNIMA E SINCRONIZAÇÃO (FIREBASE)
+        // ==============================================================
+        const initAuth = async () => {
             try {
-                const credential = await signInAnonymously(auth);
-                userId = credential.user.uid;
-                configurarFiltrosIniciais();
-                escutarBancoDados();
-            } catch (error) {
-                console.error("Erro na autenticação:", error);
-                showToast("Erro de conexão com o servidor.");
-            }
-        }
-
-        // Configura as opções iniciais dos combos de filtros de data
-        function configurarFiltrosIniciais() {
-            const dataAtual = new Date();
-            
-            // Popula os meses
-            selectMes.innerHTML = "";
-            mesesNomes.forEach((mes, idx) => {
-                const opt = document.createElement("option");
-                opt.value = mes;
-                opt.textContent = mes;
-                if(idx === dataAtual.getMonth()) opt.selected = true;
-                selectMes.appendChild(opt);
-            });
-
-            // Popula os anos (Ano atual e anterior)
-            const anoAtual = dataAtual.getFullYear();
-            selectAno.innerHTML = "";
-            for(let a = anoAtual; a >= anoAtual - 1; a--) {
-                const opt = document.createElement("option");
-                opt.value = a;
-                opt.textContent = a;
-                selectAno.appendChild(opt);
-            }
-        }
-
-        // Escuta em Tempo Real as Alterações do Firebase Realtime Database
-        function escutarBancoDados() {
-            if(!userId) return;
-            const referenciaRef = ref(db, `usuarios/${userId}/registros`);
-            onValue(referenciaRef, (snapshot) => {
-                registrosLocais = [];
-                if (snapshot.exists()) {
-                    const dados = snapshot.val();
-                    for (let id em dados) {
-                        registrosLocais.push({ id, ...dados[id] });
-                    }
-                    // Ordena pela data e hora mais recente primeiro
-                    registrosLocais.sort((a, b) => new Date(`${b.data}T${b.hora}`) - new Date(`${a.data}T${a.hora}`));
-                }
-                carregarHistorico();
-            });
-        }
-
-        // Renderiza e Filtra a Lista de Histórico na Tela
-        window.carregarHistorico = function() {
-            const mesSel = selectMes.value;
-            const anoSel = selectAno.value;
-            const container = document.getElementById("historico-lista");
-            
-            const filtrados = registrosLocais.filter(item => {
-                if(!item.data) return false;
-                const partes = item.data.split("-");
-                if(partes.length < 2) return false;
-                const mIdx = parseInt(partes[1], 10) - 1;
-                const aStr = partes[0];
-                return mesesNomes[mIdx] === mesSel && aStr === anoSel;
-            });
-
-            if (filtrados.length === 0) {
-                container.innerHTML = `<div class="vazio">Nenhum registro encontrado para ${mesSel}/${anoSel}.</div>`;
-                return;
-            }
-
-            container.innerHTML = "";
-            filtrados.forEach(item => {
-                const div = document.createElement("div");
-                div.className = "item-historico";
-                
-                // Formatação legível da data br
-                let dataFormatada = item.data;
-                if(item.data) {
-                    const p = item.data.split("-");
-                    if(p.length === 3) dataFormatada = `${p[2]}/${p[1]}`;
-                }
-
-                let badgeClass = "badge-normal";
-                let sufixo = " mg/dL";
-                
-                if(item.tipo === "Insulina") {
-                    badgeClass = "badge-insulina";
-                    sufixo = " U";
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
-                    const v = parseInt(item.valor);
-                    if(v < 70) badgeClass = "badge-critico";
-                    else if(v > 180) badgeClass = "badge-alerta";
+                    await signInAnonymously(auth);
                 }
-
-                div.innerHTML = `
-                    <div class="item-info">
-                        <div class="item-meta">📅 ${dataFormatada} às ${item.hora || '--:--'}</div>
-                        <div class="item-momento">${item.momento}</div>
-                    </div>
-                    <div class="item-valor-acao">
-                        <span class="badge-valor ${badgeClass}">${item.valor}${sufixo}</span>
-                        <button class="btn-deletar" onclick="deletarRegistro('${item.id}')" title="Excluir">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                        </button>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
+            } catch(e) { console.error("Erro na autenticação:", e); }
         };
-
-        // Salva uma Nova Entrada de Medição ou Insulina
-        window.salvarRegistro = function() {
-            const tipo = document.getElementById("tipo").value;
-            const valor = document.getElementById("valor").value;
-            const momento = document.getElementById("momento").value;
-            const data = document.getElementById("data").value;
-            const hora = document.getElementById("hora").value;
-
-            if (!valor || !momento || !data || !hora) {
-                showToast("⚠️ Por favor, preencha todos os campos!");
-                return;
-            }
-
-            if(!userId) {
-                showToast("Erro de autenticação de sessão.");
-                return;
-            }
-
-            const novoRef = push(ref(db, `usuarios/${userId}/registros`));
-            set(novoRef, { tipo, valor, momento, data, hora })
-            .then(() => {
-                showToast("✅ Registro salvo com sucesso!");
-                document.getElementById("valor").value = "";
-            })
-            .catch((err) => {
-                console.error(err);
-                showToast("Erro ao tentar salvar.");
-            });
-        };
-
-        // Remove um Registro Selecionado do Banco de Dados
-        window.deletarRegistro = function(id) {
-            if(confirm("Deseja realmente excluir este registro?")) {
-                remove(ref(db, `usuarios/${userId}/registros/${id}`))
-                .then(() => showToast("🗑️ Registro removido!"))
-                .catch(() => showToast("Erro ao deletar registro."));
-            }
-        };
-
-        // Gera e compartilha a mensagem de texto estruturada no WhatsApp
-        window.compartilharWhatsApp = function() {
-            const mesSel = selectMes.value;
-            const anoSel = selectAno.value;
-            
-            let texto = `*📊 RELATÓRIO GLICÊMICO - ${mesSel.toUpperCase()}/${anoSel}*\\n\\n`;
-            let temDado = false;
-
-            // Filtra e agrupa de forma organizada por dias corridos de 1 a 31
-            for(let dia = 1; dia <= 31; dia++) {
-                const dadosDoDia = registrosLocais.filter(item => {
-                    if(!item.data || item.tipo !== "Glicemia") return false;
-                    const dataObj = new Date(item.data + "T00:00:00");
-                    return dataObj.getDate() === dia && mesesNomes[dataObj.getMonth()] === mesSel && dataObj.getFullYear().toString() === anoSel;
-                });
-                
-                if(dadosDoDia.length > 0) {
-                    temDado = true; 
-                    texto += `*--- DIA ${String(dia).padStart(2, '0')} ---*\\n`;
-                    
-                    const getValStr = (m) => { 
-                        const r = dadosDoDia.filter(d => d.momento.toLowerCase().includes(m.toLowerCase())); 
-                        return r.length === 0 ? " - " : r.map(x => x.valor).join(", "); 
-                    };
-                    
-                    texto += `🌅 *Café da Manhã* ➔ Ant: ${getValStr('Jejum')} | Dep: ${getValStr('Pós café')}\\n`;
-                    texto += `🍽️ *Almoço* ➔ Ant: ${getValStr('Antes do almoço')} | Dep: ${getValStr('Depois do almoço')}\\n`;
-                    texto += `🍲 *Jantar* ➔ Ant: ${getValStr('Antes da janta')} | Dep: ${getValStr('Depois da janta')}\\n`;
-                    texto += `🌙 *Noite* ➔ Dormir: ${getValStr('Dormir')} | Madrug: ${getValStr('Madrugada')}\\n\\n`;
-                }
-            }
-            
-            if(!temDado) texto += `Nenhuma medição registrada neste período.`;
-            
-            // Limpa quebras duplicadas de formatação de string url
-            const textoPronto = encodeURIComponent(texto.replace(/\\n/g, '\n'));
-            window.open(`https://api.whatsapp.com/send?text=${textoPronto}`, '_blank');
-        };
-
-        // Constrói uma Tabela HTML Limpa e Dispara o download do PDF via html2pdf
-        window.gerarPDF = function() {
-            const mesSel = selectMes.value;
-            const anoSel = selectAno.value;
-            
-            document.getElementById("pdf-subtitulo").textContent = `Referência: ${mesSel} de ${anoSel}`;
-            const espacoTabela = document.getElementById("pdf-tabela-espaco");
-            
-            let tabelaHTML = `
-                <table class="pdf-table">
-                    <thead>
-                        <tr>
-                            <th>Dia</th>
-                            <th>Jejum</th>
-                            <th>Pós Café</th>
-                            <th>Antes Almoço</th>
-                            <th>Depois Almoço</th>
-                            <th>Antes Janta</th>
-                            <th>Depois Janta</th>
-                            <th>Dormir</th>
-                            <th>Madrugada</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            let temMedicao = false;
-            for(let dia = 1; dia <= 31; dia++) {
-                const dadosDoDia = registrosLocais.filter(item => {
-                    if(!item.data || item.tipo !== "Glicemia") return false;
-                    const dataObj = new Date(item.data + "T00:00:00");
-                    return dataObj.getDate() === dia && mesesNomes[dataObj.getMonth()] === mesSel && dataObj.getFullYear().toString() === anoSel;
-                });
-
-                if(dadosDoDia.length > 0) {
-                    temMedicao = true;
-                    const extrair = (m) => { 
-                        const r = dadosDoDia.filter(d => d.momento.toLowerCase().includes(m.toLowerCase())); 
-                        return r.length === 0 ? "" : r.map(x => x.valor).join(", "); 
-                    };
-
-                    tabelaHTML += `
-                        <tr>
-                            <td><b>${String(dia).padStart(2, '0')}</b></td>
-                            <td>${extrair('Jejum')}</td>
-                            <td>${extrair('Pós café')}</td>
-                            <td>${extrair('Antes do almoço')}</td>
-                            <td>${extrair('Depois do almoço')}</td>
-                            <td>${extrair('Antes da janta')}</td>
-                            <td>${extrair('Depois da janta')}</td>
-                            <td>${extrair('Dormir')}</td>
-                            <td>${extrair('Madrugada')}</td>
-                        </tr>
-                    `;
-                }
-            }
-
-            tabelaHTML += `</tbody></table>`;
-            
-            if(!temMedicao) {
-                showToast("Não existem dados de glicemia para exportar neste mês.");
-                return;
-            }
-
-            espacoTabela.innerHTML = tabelaHTML;
-
-            // Opções de configuração e processamento do html2pdf
-            const elementoAlvo = document.getElementById("pdf-conteudo");
-            elementoAlvo.style.display = "block"; // Ativa temporariamente para captura do script
-
-            const opcoes = {
-                margin: 10,
-                filename: `Relatorio_Glicemia_${mesSel}_${anoSel}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-            };
-
-            html2pdf().set(opcoes).from(elementoAlvo).save().then(() => {
-                elementoAlvo.style.display = "none"; // Oculta novamente após a compilação
-            });
-        };
-
-        // Inicia fluxos automaticamente no carregamento do script
         initAuth();
-    </script>
 
-    <script>
-        const opcoesGlicemia = [
-            "Jejum (Acordar)", "Pós café da manhã", "Antes do almoço", 
-            "Depois do almoço", "Antes da janta", "Depois da janta", 
-            "Dormir / Noite", "Madrugada"
-        ];
-
-        const opcoesInsulina = [
-            "Café da Manhã", "Almoço", "Jantar", "Correção Noturna", "Ao acordar (Basal)"
-        ];
-
-        // Alterna dinamicamente os textos e combos dependendo do tipo selecionado
-        function alternarCampos() {
-            const tipo = document.getElementById("tipo").value;
-            const labelValor = document.getElementById("label-valor");
-            const inputValor = document.getElementById("valor");
-            const comboMomento = document.getElementById("momento");
-
-            comboMomento.innerHTML = "";
-
-            if (tipo === "Glicemia") {
-                labelValor.textContent = "Valor da Glicemia (mg/dL)";
-                inputValor.placeholder = "Ex: 110";
-                opcoesGlicemia.forEach(opt => {
-                    const o = document.createElement("option");
-                    o.value = opt; o.textContent = opt;
-                    comboMomento.appendChild(o);
-                });
-            } else {
-                labelValor.textContent = "Dose de Insulina (Unidades R/N/H)";
-                inputValor.placeholder = "Ex: 4";
-                opcoesInsulina.forEach(opt => {
-                    const o = document.createElement("option");
-                    o.value = opt; o.textContent = opt;
-                    comboMomento.appendChild(o);
-                });
-            }
-        }
-
-        // Define os valores de data e hora atuais do sistema como padrão nos inputs
-        function definirDataHoraAtual() {
-            const agora = new Date();
-            
-            // Ajuste de fuso horário local formato YYYY-MM-DD
-            const ano = agora.getFullYear();
-            const mes = String(agora.getMonth() + 1).padStart(2, '0');
-            const dia = String(agora.getDate()).padStart(2, '0');
-            document.getElementById("data").value = `${ano}-${mes}-${dia}`;
-
-            // Ajuste do horário padrão HH:MM
-            const hora = String(agora.getHours()).padStart(2, '0');
-            const minuto = String(agora.getMinutes()).padStart(2, '0');
-            document.getElementById("hora").value = `${hora}:${minuto}`;
-        }
-
-        // Sistema Simples e Fluído de Toast Notification
-        function showToast(mensagem) {
-            const toast = document.getElementById("toast");
-            toast.textContent = mensagem;
-            toast.classList.add("show");
-            setTimeout(() => { toast.classList.remove("show"); }, 3000);
-        }
-
-        // Inicializações estruturais básicas de Interface
-        alternarCampos();
-        definirDataHoraAtual();
-
-        // --- REGISTRO DO SERVICE WORKER (CORRIGIDO PARA MAIÚSCULO) ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('SW.JS')
-                    .then(reg => console.log('Service Worker registrado com sucesso!', reg))
-                    .catch(err => console.error('Erro ao registrar o Service Worker:', err));
-            });
-        }
-
-        // Captura do evento de instalação (PWA)
-        let deveferrePrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deveferrePrompt = e;
-            
-            const btnInstalar = document.getElementById('btnInstalar');
-            if (btnInstalar) {
-                btnInstalar.style.display = 'block';
-                btnInstalar.addEventListener('click', () => {
-                    deveferrePrompt.prompt();
-                    deveferrePrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('Usuário aceitou a instalação.');
-                        }
-                        deveferrePrompt = null;
-                        btnInstalar.style.display = 'none';
-                    });
-                });
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user && syncCode) {
+                iniciarListenerNuvem();
             }
         });
+
+        // Função Master que envia os dados para a nuvem
+        window.sincronizarComNuvem = async function(campo, dados) {
+            if (!currentUser || !syncCode || isSyncing) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'glico_sync_' + syncCode);
+                await setDoc(docRef, { [campo]: dados }, { merge: true });
+            } catch (e) { console.error("Erro ao fazer upload para nuvem:", e); }
+        };
+
+        window.conectarNuvem = function() {
+            const code = document.getElementById('inputSyncCode').value.trim().toUpperCase();
+            if (!code) return alert("Digite um código de sincronização.");
+            
+            syncCode = code;
+            localStorage.setItem('gabi_sync_code', syncCode);
+            document.getElementById('statusSync').innerText = "Status: Conectado! ✅ Código: " + syncCode;
+            
+            if (currentUser) {
+                // Ao conectar, envia os dados locais atuais pra garantir que a nuvem tem a base
+                isSyncing = true;
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'glico_sync_' + syncCode);
+                setDoc(docRef, {
+                    glicemia: JSON.parse(localStorage.getItem(CHAVE) || "[]"),
+                    consultas: consultas,
+                    linha_tempo: eventos,
+                    estoque: JSON.parse(localStorage.getItem(CHAVE_ESTOQUE) || "[]"),
+                    ajustes_vFinal: dbDoses,
+                    historico_doses: historicoDoses,
+                    lembretes: lembretes
+                }, { merge: true }).then(() => {
+                    isSyncing = false;
+                    iniciarListenerNuvem();
+                    alert("Aparelho conectado à nuvem com sucesso!");
+                });
+            }
+        };
+
+        window.iniciarListenerNuvem = function() {
+            if (!currentUser || !syncCode) return;
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'glico_sync_' + syncCode);
+            
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+
+            unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    isSyncing = true; // Pausa uploads enquanto estamos baixando
+                    const data = docSnap.data();
+                    
+                    if (data.glicemia) { localStorage.setItem(CHAVE, JSON.stringify(data.glicemia)); renderizarGlicemia(); }
+                    if (data.consultas) { localStorage.setItem('gabi_consultas', JSON.stringify(data.consultas)); consultas = data.consultas; renderizarConsultas(); }
+                    if (data.linha_tempo) { localStorage.setItem('gabi_linha_tempo', JSON.stringify(data.linha_tempo)); eventos = data.linha_tempo; renderizarLinhaTempo(); }
+                    if (data.estoque) { localStorage.setItem(CHAVE_ESTOQUE, JSON.stringify(data.estoque)); renderizarEstoque(); }
+                    if (data.ajustes_vFinal) { localStorage.setItem('gabi_ajustes_vFinal', JSON.stringify(data.ajustes_vFinal)); dbDoses = data.ajustes_vFinal; renderDosesHome(); renderDoses(); }
+                    if (data.historico_doses) { localStorage.setItem('gabi_historico_doses', JSON.stringify(data.historico_doses)); historicoDoses = data.historico_doses; renderDoses(); }
+                    if (data.lembretes) { localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(data.lembretes)); lembretes = data.lembretes; renderizarLembretes(); }
+                    
+                    setTimeout(() => isSyncing = false, 500); // Libera uploads novamente
+                }
+            }, (error) => { console.error("Erro ao baixar da nuvem:", error); });
+        };
+
+        // ==============================================================
+        // FUNÇÕES DO SISTEMA (Tornadas globais para o HTML acessar)
+        // ==============================================================
+        window.onload = () => {
+            document.getElementById('data_r').value = new Date().toISOString().split('T')[0];
+            document.getElementById('selAno').value = new Date().getFullYear();
+            const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            document.getElementById('selMes').value = meses[new Date().getMonth()];
+            
+            if (syncCode) {
+                document.getElementById('inputSyncCode').value = syncCode;
+                document.getElementById('statusSync').innerText = "Status: Conectado! ✅ Código: " + syncCode;
+            }
+
+            const wppGabiSalvo = localStorage.getItem('gabi_wpp_gabi');
+            if(wppGabiSalvo) document.getElementById('wppGabi').value = wppGabiSalvo;
+            
+            const wppMedicoSalvo = localStorage.getItem('gabi_wpp_medico');
+            if(wppMedicoSalvo) document.getElementById('wppMedico').value = wppMedicoSalvo;
+
+            renderDosesHome(); renderizarGlicemia(); renderizarLembretes();
+            setInterval(checarAlarmes, 10000); // Checa alarmes a cada 10 segundos
+        };
+
+        window.navegar = function(idTela, btn) {
+            document.querySelectorAll('.tela').forEach(t => t.classList.remove('active'));
+            document.getElementById(idTela).classList.add('active');
+            document.querySelectorAll('.nav-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (idTela === 'tela-home') renderizarGlicemia();
+            if (idTela === 'tela-consultas') renderizarConsultas();
+            if (idTela === 'tela-historico') renderizarLinhaTempo();
+            if (idTela === 'tela-ajustes') renderDoses();
+            if (idTela === 'tela-estoque') renderizarEstoque();
+            if (idTela === 'tela-alertas') renderizarLembretes();
+        };
+
+        // --- GLICEMIA ---
+        window.salvarGlicemia = function() {
+            const valor = document.getElementById('glicemia').value;
+            const data = document.getElementById('data_r').value;
+            const hora = document.getElementById('hora_r').value || new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+            if (!valor) return alert("Digite o valor!");
+
+            const novoRegistro = { id: Date.now(), momento: document.getElementById('momento').value, valor: parseInt(valor), data: data, hora: hora };
+            const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]");
+            banco.push(novoRegistro);
+            localStorage.setItem(CHAVE, JSON.stringify(banco));
+            sincronizarComNuvem('glicemia', banco); // <--- SYNC
+
+            // Alarme Inteligente +1 hora
+            try {
+                let partes = hora.split(':');
+                let h = (parseInt(partes[0]) + 1) % 24; 
+                let m = parseInt(partes[1]);
+                let horaAlarme = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0');
+                let nomeAlarmeInteligente = `⏰ Medir Glicose Novamente (${novoRegistro.momento})`;
+                
+                // Reconhece o último e sobreescreve para não criar 3 alarmes repetidos
+                let alarmeExistente = lembretes.find(l => l.nome === nomeAlarmeInteligente);
+                if (alarmeExistente) {
+                    alarmeExistente.hora = horaAlarme;
+                } else {
+                    lembretes.push({ id: Date.now() + 1, nome: nomeAlarmeInteligente, hora: horaAlarme, tipoSom: 'padrao', dias: [0,1,2,3,4,5,6] });
+                }
+
+                lembretes.sort((a, b) => a.hora.localeCompare(b.hora));
+                localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes));
+                sincronizarComNuvem('lembretes', lembretes); // <--- SYNC
+                renderizarLembretes();
+                alert(`Salvo com sucesso!\nO GlicoGabi ajustou o alarme para as ${horaAlarme} para você medir de novo.`);
+            } catch(e) {}
+
+            document.getElementById('glicemia').value = "";
+            renderizarGlicemia();
+        };
+
+        window.excluirGlicemia = function(id) {
+            if(!confirm("Excluir?")) return;
+            let banco = JSON.parse(localStorage.getItem(CHAVE) || "[]");
+            banco = banco.filter(item => item.id !== id);
+            localStorage.setItem(CHAVE, JSON.stringify(banco));
+            sincronizarComNuvem('glicemia', banco); // <--- SYNC
+            renderizarGlicemia();
+        };
+
+        window.renderizarGlicemia = function() {
+            const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]");
+            const dataFiltro = document.getElementById('data_r').value;
+            const lista = document.getElementById('historicoGlicemia');
+            lista.innerHTML = "";
+            
+            const filtrados = banco.filter(item => item.data === dataFiltro).sort((a,b) => a.hora.localeCompare(b.hora));
+
+            let somaGlicemia = 0; let agrupados = {};
+            filtrados.forEach(item => { 
+                somaGlicemia += item.valor; 
+                if(!agrupados[item.momento]) agrupados[item.momento] = []; 
+                agrupados[item.momento].push(item); 
+            });
+
+            // RENDERIZAR OS CARDS NA TELA HOME
+            for(let momento in agrupados) {
+                let itens = agrupados[momento];
+                let htmlItens = itens.map(item => {
+                    let corTexto = item.valor > 180 ? 'var(--vermelho)' : (item.valor < 70 ? 'var(--azul)' : 'var(--verde)');
+                    let msgIncentivo = "";
+                    let isJejum = item.momento.toLowerCase().includes("jejum") || item.momento.toLowerCase().includes("madrugada");
+                    if (item.valor < 70) msgIncentivo = "⚠️ Hipoglicemia. Consuma um carboidrato rápido e repita o teste em 15 min. Cuide-se!";
+                    else if (item.valor > 250) msgIncentivo = "🚨 Está alto. Beba água, verifique a insulina e não desanime, você consegue baixar!";
+                    else if (item.valor > 180) msgIncentivo = "👀 Fique atento(a). Um pouco acima do limite, mas ajustar faz parte do processo!";
+                    else if (isJejum && item.valor > 130) msgIncentivo = "⚠️ Um pouco acima do ideal para jejum. Fique de olho, mas siga firme no tratamento!";
+                    else msgIncentivo = "🌟 Excelente! Nível dentro do limite. Continue com esse ótimo cuidado!";
+
+                    return `
+                        <div style="border-bottom: 1px solid #eee; padding: 12px 0; border-radius: 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <div class="card-val" style="margin: 0;"><span style="color: ${corTexto};">${item.valor}</span><small style="font-size: 14px; color: #666; font-weight: normal;">mg/dL</small></div>
+                                <div style="display: flex; align-items: center; gap: 15px;"><span style="font-size: 12px; color: #999;">⏰ ${item.hora}</span><button class="btn-excluir" onclick="excluirGlicemia(${item.id})">✕</button></div>
+                            </div>
+                            <div style="font-size: 12px; color: #555; background-color: #f9f9f9; padding: 6px; border-radius: 6px; font-style: italic;">${msgIncentivo}</div>
+                        </div>`;
+                }).join('');
+                lista.innerHTML += `<div class="card" style="border-left-color: var(--primaria); padding-bottom: 5px;"><div class="card-header" style="border-bottom: 2px solid #f4f0ff; padding-bottom: 5px; margin-bottom: 5px;"><span style="font-size: 16px;">${momento}</span></div>${htmlItens}</div>`;
+            }
+            
+            document.getElementById('resumoDia').innerHTML = filtrados.length > 0 ? `Média do dia: <b>${Math.round(somaGlicemia / filtrados.length)} mg/dL</b> (${filtrados.length} medições)` : `Nenhuma medição registrada para este dia.`;
+        };
+
+        // --- ESTOQUE ---
+        window.adicionarInsumo = function() {
+            const nome = document.getElementById('nomeInsumo').value; const qtd = parseInt(document.getElementById('qtdInsumo').value); const validade = document.getElementById('validadeInsumo').value;
+            if(!nome || isNaN(qtd)) return alert("Preencha o nome e a quantidade!");
+            let estoque = JSON.parse(localStorage.getItem(CHAVE_ESTOQUE) || "[]");
+            estoque.push({ nome, qtd, validade });
+            
+            // Criar alarme automático de vencimento 1 mês antes
+            if(validade) {
+                try {
+                    let dataVal = new Date(`${validade}T09:00:00`); // Alerta sempre as 09:00 da manhã
+                    if (!isNaN(dataVal.getTime())) {
+                        let umMesAntes = new Date(dataVal.getTime() - 30 * 24 * 60 * 60 * 1000); // Tira aprox. 30 dias
+                        lembretes.push({ 
+                            id: Date.now()+1, 
+                            nome: `📦 Vencimento próximo (1 mês): ${nome}`, 
+                            hora: '09:00', 
+                            dataExata: umMesAntes.toISOString().split('T')[0], 
+                            tipoSom: 'suave' 
+                        });
+                        lembretes.sort((a, b) => a.hora.localeCompare(b.hora));
+                        localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes));
+                        sincronizarComNuvem('lembretes', lembretes);
+                        renderizarLembretes();
+                        alert("Insumo adicionado e alarme de vencimento agendado para 1 mês antes!");
+                    }
+                } catch(e) {}
+            }
+
+            localStorage.setItem(CHAVE_ESTOQUE, JSON.stringify(estoque));
+            sincronizarComNuvem('estoque', estoque); // <--- SYNC
+            document.getElementById('nomeInsumo').value = ""; document.getElementById('qtdInsumo').value = ""; document.getElementById('validadeInsumo').value = "";
+            renderizarEstoque();
+        };
+        window.alterarEstoque = function(index, valor) {
+            let estoque = JSON.parse(localStorage.getItem(CHAVE_ESTOQUE) || "[]");
+            estoque[index].qtd = Math.max(0, estoque[index].qtd + valor);
+            localStorage.setItem(CHAVE_ESTOQUE, JSON.stringify(estoque));
+            sincronizarComNuvem('estoque', estoque); // <--- SYNC
+            renderizarEstoque();
+        };
+        window.removerInsumo = function(index) {
+            if(!confirm("Remover este item?")) return;
+            let estoque = JSON.parse(localStorage.getItem(CHAVE_ESTOQUE) || "[]");
+            estoque.splice(index, 1);
+            localStorage.setItem(CHAVE_ESTOQUE, JSON.stringify(estoque));
+            sincronizarComNuvem('estoque', estoque); // <--- SYNC
+            renderizarEstoque();
+        };
+        window.renderizarEstoque = function() {
+            let estoque = JSON.parse(localStorage.getItem(CHAVE_ESTOQUE) || "[]");
+            const lista = document.getElementById('listaEstoque'); lista.innerHTML = "";
+            if (estoque.length === 0) return lista.innerHTML = "<p style='text-align:center; color:#999; font-size:12px;'>Estoque vazio.</p>";
+            estoque.forEach((item, index) => {
+                let corQtd = item.qtd <= 5 ? "color: red;" : "color: var(--primaria);";
+                let validadeStr = item.validade ? `<div style="font-size: 11px; color: #777; margin-top: 3px;">Validade: ${item.validade.split('-').reverse().join('/')}</div>` : '';
+                lista.innerHTML += `<div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);"><div style="flex: 2;"><div style="font-weight: bold; font-size: 14px; color: #333;">${item.nome}</div>${validadeStr}</div><div style="flex: 1; text-align: center; font-size: 18px; font-weight: bold; ${corQtd}">${item.qtd}</div><div style="display: flex; gap: 5px;"><button onclick="alterarEstoque(${index}, -1)" style="background: #f44336; padding: 8px 12px; border-radius: 5px; font-size: 16px;">-</button><button onclick="alterarEstoque(${index}, 1)" style="background: #4caf50; padding: 8px 12px; border-radius: 5px; font-size: 16px;">+</button><button onclick="removerInsumo(${index})" style="background: transparent; color: #999; padding: 8px; font-size: 16px;">🗑️</button></div></div>`;
+            });
+        };
+
+        // --- AJUSTES / PRESCRIÇÕES ---
+        window.toggleAbaAjustes = function(aba) { 
+            document.getElementById('abaDoses').classList.toggle('hidden', aba !== 'doses'); document.getElementById('abaConfig').classList.toggle('hidden', aba !== 'config'); document.getElementById('btnDoses').classList.toggle('active', aba === 'doses'); document.getElementById('btnConfig').classList.toggle('active', aba === 'config'); 
+            if(aba === 'doses') renderDoses(); 
+        };
+        window.salvarDose = function() { 
+            const nome = document.getElementById('nomeMed').value; const hora = document.getElementById('horaMed').value; const qtd = document.getElementById('qtdMed').value; const idx = parseInt(document.getElementById('editIdx').value); 
+            if(!nome || !qtd) return alert("Preencha o nome e a dose."); 
+            
+            const dataHoraAtual = new Date().toLocaleString('pt-BR');
+            let logMsg = "";
+
+            if(idx === -1) {
+                dbDoses.push({nome, hora, qtd}); 
+                logMsg = `➕ Adicionado: ${nome} (${hora || 'Sem hora'}) - Dose: ${qtd}`;
+            } else {
+                const ant = dbDoses[idx];
+                logMsg = `✏️ Alterado: ${ant.nome} de [${ant.qtd}] para [${qtd}]`;
+                dbDoses[idx] = {nome, hora, qtd}; 
+                document.querySelector('#abaDoses .btn-acao').innerText = "Salvar Prescrição";
+            }
+            
+            historicoDoses.unshift({ data: dataHoraAtual, msg: logMsg });
+            if(historicoDoses.length > 50) historicoDoses.pop(); // Mantém os últimos 50 registros para não pesar
+
+            localStorage.setItem('gabi_ajustes_vFinal', JSON.stringify(dbDoses)); 
+            localStorage.setItem('gabi_historico_doses', JSON.stringify(historicoDoses));
+            
+            sincronizarComNuvem('ajustes_vFinal', dbDoses); 
+            sincronizarComNuvem('historico_doses', historicoDoses); 
+            
+            document.getElementById('nomeMed').value = ""; document.getElementById('horaMed').value = ""; document.getElementById('qtdMed').value = ""; document.getElementById('editIdx').value = "-1"; renderDoses(); 
+        };
+        window.editarDose = function(i) {
+            const m = dbDoses[i];
+            document.getElementById('nomeMed').value = m.nome;
+            document.getElementById('horaMed').value = m.hora || '';
+            document.getElementById('qtdMed').value = m.qtd;
+            document.getElementById('editIdx').value = i;
+            document.querySelector('#abaDoses .btn-acao').innerText = "Atualizar Prescrição";
+            document.querySelector('.content-container').scrollTo({top: 0, behavior: 'smooth'});
+        };
+        window.removerDose = function(i) { 
+            if(confirm("Deseja remover esta prescrição?")) { 
+                const ant = dbDoses[i];
+                const dataHoraAtual = new Date().toLocaleString('pt-BR');
+                historicoDoses.unshift({ data: dataHoraAtual, msg: `🗑️ Removido: ${ant.nome} (${ant.qtd})` });
+                
+                dbDoses.splice(i, 1); 
+                localStorage.setItem('gabi_ajustes_vFinal', JSON.stringify(dbDoses)); 
+                localStorage.setItem('gabi_historico_doses', JSON.stringify(historicoDoses));
+                
+                sincronizarComNuvem('ajustes_vFinal', dbDoses); 
+                sincronizarComNuvem('historico_doses', historicoDoses);
+                renderDoses(); 
+            } 
+        };
+        window.renderDoses = function() { 
+            document.getElementById('listaMeds').innerHTML = dbDoses.map((m, i) => `<tr><td>${m.nome}</td><td>${m.hora || '-'}</td><td>${m.qtd}</td><td style="white-space:nowrap;"><button style="background:none; border:none; padding:5px; font-size:16px; cursor:pointer;" onclick="editarDose(${i})">✏️</button><button style="background:none; border:none; padding:5px; font-size:16px; color:#f44336; cursor:pointer;" onclick="removerDose(${i})">✕</button></td></tr>`).join(''); 
+            renderDosesHome(); 
+            
+            const listaHist = document.getElementById('listaHistoricoMeds');
+            if(historicoDoses.length === 0) {
+                listaHist.innerHTML = "Nenhuma alteração registrada.";
+            } else {
+                listaHist.innerHTML = historicoDoses.map(h => `<div style="margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed #eee;"><strong>${h.data}</strong><br>${h.msg}</div>`).join('');
+            }
+        };
+        window.renderDosesHome = function() {
+            const box = document.getElementById('boxDosesHome'); const cont = document.getElementById('conteudoDosesHome');
+            if(dbDoses.length > 0) { box.style.display = 'block'; cont.innerHTML = dbDoses.map(d => `${d.nome} (${d.hora || 'Sem hora'}): <span style="color:var(--primaria)">${d.qtd}</span>`).join(' | '); } else { box.style.display = 'none'; }
+        };
+
+        // --- CONSULTAS ---
+        window.salvarConsulta = function() {
+            const medico = document.getElementById('medico').value; const data = document.getElementById('data_consulta').value; const hora = document.getElementById('hora_consulta').value; const local = document.getElementById('local').value; const tipo = document.getElementById('tipo').value;
+            const editId = document.getElementById('editConsultaId').value;
+            
+            if (!medico || !data || !hora) return alert("Preencha os campos obrigatórios (Médico, Data e Hora)!");
+            
+            if (editId === "-1") {
+                const novaConsulta = { id: Date.now(), medico, data, hora, local, tipo, obs: "" };
+                consultas.push(novaConsulta);
+                
+                // Gerar Alarmes Automáticos da Consulta
+                try {
+                    let dataHoraConsulta = new Date(`${data}T${hora}:00`);
+                    if (!isNaN(dataHoraConsulta.getTime())) {
+                        // Alarme 1 dia antes
+                        let umDiaAntes = new Date(dataHoraConsulta.getTime() - 24 * 60 * 60 * 1000);
+                        lembretes.push({ id: Date.now()+1, nome: `🩺 Consulta amanhã: ${medico}`, hora: umDiaAntes.toTimeString().substring(0,5), dataExata: umDiaAntes.toISOString().split('T')[0], tipoSom: 'rapido' });
+                        
+                        // Alarme 2 horas antes
+                        let duasHorasAntes = new Date(dataHoraConsulta.getTime() - 2 * 60 * 60 * 1000);
+                        lembretes.push({ id: Date.now()+2, nome: `🩺 Consulta em 2h: ${medico}`, hora: duasHorasAntes.toTimeString().substring(0,5), dataExata: duasHorasAntes.toISOString().split('T')[0], tipoSom: 'rapido' });
+                        
+                        localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes));
+                        sincronizarComNuvem('lembretes', lembretes);
+                        renderizarLembretes();
+                        alert("Consulta agendada! Lembretes criados para 1 dia antes e 2h antes.");
+                    }
+                } catch(e) {}
+            } else {
+                const idx = consultas.findIndex(c => c.id == editId);
+                if (idx > -1) {
+                    const oldObs = consultas[idx].obs; // preserva a obs antiga
+                    consultas[idx] = { id: parseInt(editId), medico, data, hora, local, tipo, obs: oldObs };
+                }
+                document.getElementById('editConsultaId').value = "-1";
+                document.getElementById('btnSalvarConsulta').innerText = "Salvar Agendamento";
+            }
+            
+            consultas.sort((a, b) => a.data.localeCompare(b.data) || a.hora.localeCompare(b.hora));
+            localStorage.setItem('gabi_consultas', JSON.stringify(consultas)); sincronizarComNuvem('consultas', consultas); renderizarConsultas();
+            document.getElementById('medico').value = ""; document.getElementById('local').value = "";
+        };
+
+        window.editarConsulta = function(id) {
+            const c = consultas.find(x => x.id === id);
+            if (!c) return;
+            document.getElementById('medico').value = c.medico;
+            document.getElementById('data_consulta').value = c.data;
+            document.getElementById('hora_consulta').value = c.hora;
+            document.getElementById('local').value = c.local;
+            document.getElementById('tipo').value = c.tipo;
+            document.getElementById('editConsultaId').value = c.id;
+            
+            document.getElementById('btnSalvarConsulta').innerText = "Atualizar Agendamento";
+            document.querySelector('.content-container').scrollTo({top: 0, behavior: 'smooth'});
+        };
+
+        window.excluirConsulta = function(id) { 
+            if(!confirm("Excluir esta consulta?")) return;
+            consultas = consultas.filter(c => c.id !== id); 
+            localStorage.setItem('gabi_consultas', JSON.stringify(consultas)); 
+            sincronizarComNuvem('consultas', consultas); 
+            renderizarConsultas(); 
+        };
+
+        window.toggleObsConsulta = function(id) {
+            const el = document.getElementById('obs_card_' + id);
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        };
+
+        window.salvarObsConsulta = function(id) {
+            const txt = document.getElementById('obs_txt_' + id).value;
+            const c = consultas.find(x => x.id === id);
+            if(c) {
+                c.obs = txt;
+                localStorage.setItem('gabi_consultas', JSON.stringify(consultas)); 
+                sincronizarComNuvem('consultas', consultas);
+                alert("Anotações salvas com sucesso!");
+                window.toggleObsConsulta(id); // recolhe o card
+            }
+        };
+
+        window.renderizarConsultas = function() {
+            const lista = document.getElementById('historicoConsultas'); lista.innerHTML = "";
+            consultas.forEach(c => { 
+                lista.innerHTML += `
+                <div class="group-card" style="border-left-color: ${c.tipo === 'Exame' ? 'var(--verde)' : 'var(--laranja)'}">
+                    <div class="group-header" style="align-items: center;">
+                        <span>📅 ${c.data.split('-').reverse().join('/')}</span>
+                        <div>
+                            <button onclick="editarConsulta(${c.id})" style="color: var(--primaria); margin-right: 15px; font-size: 16px; background: none; border: none; padding: 0;">✏️</button>
+                            <button onclick="excluirConsulta(${c.id})" style="color: #f44336; font-size: 16px; background: none; border: none; padding: 0;">✕</button>
+                        </div>
+                    </div>
+                    <div class="main-entry">
+                        <span class="doc-name">${c.medico}</span><br>
+                        ⏰ ${c.hora} | 📍 ${c.local || 'Sem local'}
+                        <div style="margin-top: 15px;">
+                            <button onclick="toggleObsConsulta(${c.id})" style="background: #e3d9ff; color: var(--primaria); padding: 8px 12px; font-size: 11px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; width: 100%;">📝 Observações e Anotações</button>
+                        </div>
+                        <div id="obs_card_${c.id}" style="display: none; margin-top: 10px; background: #f4f0ff; padding: 10px; border-radius: 10px;">
+                            <textarea id="obs_txt_${c.id}" style="width: 100%; height: 80px; font-size: 13px; border: 1px solid #ddd; border-radius: 8px; padding: 8px;" placeholder="Digite aqui o que precisa perguntar pro médico, exames para levar, etc...">${c.obs || ''}</textarea>
+                            <button onclick="salvarObsConsulta(${c.id})" style="background: var(--primaria); color: white; padding: 10px; font-size: 12px; border-radius: 8px; width: 100%; margin-top: 8px; border: none; font-weight: bold; cursor: pointer;">Salvar Anotações</button>
+                        </div>
+                    </div>
+                </div>`; 
+            });
+        };
+
+        // --- LINHA DO TEMPO ---
+        window.salvarLinhaTempo = function() {
+            const mes = document.getElementById('mes_hist').value; const ano = document.getElementById('ano_hist').value; const desc = document.getElementById('descricao_hist').value;
+            const editId = document.getElementById('editHistId').value;
+            
+            if (!desc) return alert("Preencha a descrição!");
+            const nomesMeses = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            
+            if (editId === "-1") {
+                eventos.push({ id: Date.now(), mesTxt: nomesMeses[mes], mes: mes, ano: ano, descricao: desc, timestamp: (parseInt(ano) * 12) + parseInt(mes) });
+            } else {
+                const idx = eventos.findIndex(e => e.id == editId);
+                if (idx > -1) eventos[idx] = { id: parseInt(editId), mesTxt: nomesMeses[mes], mes: mes, ano: ano, descricao: desc, timestamp: (parseInt(ano) * 12) + parseInt(mes) };
+                document.getElementById('editHistId').value = "-1";
+                document.getElementById('btnSalvarHist').innerText = "Salvar Dados";
+                document.getElementById('btnSalvarHist').style.backgroundColor = "var(--laranja)";
+            }
+            
+            eventos.sort((a, b) => b.timestamp - a.timestamp);
+            localStorage.setItem('gabi_linha_tempo', JSON.stringify(eventos)); sincronizarComNuvem('linha_tempo', eventos); document.getElementById('descricao_hist').value = ""; renderizarLinhaTempo();
+        };
+
+        window.editarLinhaTempo = function(id) {
+            const ev = eventos.find(e => e.id === id);
+            if (!ev) return;
+            document.getElementById('mes_hist').value = ev.mes;
+            document.getElementById('ano_hist').value = ev.ano;
+            document.getElementById('descricao_hist').value = ev.descricao;
+            document.getElementById('editHistId').value = ev.id;
+            
+            const btn = document.getElementById('btnSalvarHist');
+            btn.innerText = "Atualizar Evento";
+            btn.style.backgroundColor = "var(--primaria)";
+            document.querySelector('.content-container').scrollTo({top: 0, behavior: 'smooth'});
+        };
+
+        window.excluirLinhaTempo = function(id) {
+            if(!confirm("Excluir este evento da Linha do Tempo?")) return;
+            eventos = eventos.filter(e => e.id !== id);
+            localStorage.setItem('gabi_linha_tempo', JSON.stringify(eventos));
+            sincronizarComNuvem('linha_tempo', eventos);
+            renderizarLinhaTempo();
+        };
+
+        window.renderizarLinhaTempo = function() {
+            const lista = document.getElementById('historicoEventos'); lista.innerHTML = "";
+            eventos.forEach(e => { 
+                lista.innerHTML += `<div class="group-card"><div class="group-header" style="align-items: center;"><span>${e.mesTxt} de ${e.ano}</span><div><button onclick="editarLinhaTempo(${e.id})" style="color: var(--primaria); margin-right: 15px; font-size: 16px; background: none; border: none; padding: 0;">✏️</button><button onclick="excluirLinhaTempo(${e.id})" style="color: #f44336; font-size: 16px; background: none; border: none; padding: 0;">✕</button></div></div><div style="padding:15px">${e.descricao}</div></div>`; 
+            });
+        };
+
+        // --- ALARMES E JANELA DE NOTIFICAÇÃO NA TELA ---
+        window.tocarSom = function(tipo) {
+            try { 
+                const ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+                const osc = ctx.createOscillator(); 
+                const gainNode = ctx.createGain();
+                
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                if (tipo === 'rapido') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(800, ctx.currentTime);
+                    osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.1);
+                    osc.start(); 
+                    osc.stop(ctx.currentTime + 0.2);
+                } else if (tipo === 'sirene') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(1000, ctx.currentTime + 0.3);
+                    osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.6);
+                    osc.start(); 
+                    osc.stop(ctx.currentTime + 0.6);
+                } else if (tipo === 'suave') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, ctx.currentTime); // Nota La
+                    gainNode.gain.setValueAtTime(0, ctx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.5);
+                    gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
+                    osc.start(); 
+                    osc.stop(ctx.currentTime + 1);
+                } else {
+                    // padrao
+                    osc.type = 'sine'; 
+                    osc.frequency.setValueAtTime(880, ctx.currentTime); 
+                    osc.start(); 
+                    osc.stop(ctx.currentTime + 0.3); 
+                }
+            } catch(e) {}
+        };
+
+        window.solicitarPermissaoNotificacao = function() {
+            if (!("Notification" in window)) return alert("Seu navegador não suporta notificações nativas.");
+            Notification.requestPermission().then(permission => { if (permission === "granted") { document.getElementById('areaPermissao').style.display = 'none'; alert("Notificações ativadas!"); } });
+        };
+        
+        window.salvarLembrete = function() {
+            const nome = document.getElementById('nomeLembrete').value; 
+            const hora = document.getElementById('horaLembrete').value;
+            const tipoSom = document.getElementById('tipoSomLembrete').value || 'padrao';
+            const diasSelecionados = Array.from(document.querySelectorAll('#diasSemanaContainer input:checked')).map(cb => parseInt(cb.value));
+            
+            if(!nome || !hora) return alert("Preencha o nome e o horário do alarme!");
+            if(diasSelecionados.length === 0) return alert("Selecione pelo menos um dia para repetir o alarme!");
+            
+            lembretes.push({ id: Date.now(), nome, hora, tipoSom, dias: diasSelecionados }); 
+            lembretes.sort((a, b) => a.hora.localeCompare(b.hora));
+            
+            localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes)); 
+            sincronizarComNuvem('lembretes', lembretes);
+            
+            document.getElementById('nomeLembrete').value = ""; 
+            document.getElementById('horaLembrete').value = ""; 
+            renderizarLembretes(); 
+            alert("Alarme ativado!");
+        };
+
+        window.excluirLembrete = function(id) {
+            if(!confirm("Excluir este alarme?")) return;
+            lembretes = lembretes.filter(l => l.id !== id); 
+            localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes)); 
+            sincronizarComNuvem('lembretes', lembretes); 
+            renderizarLembretes();
+        };
+
+        window.renderizarLembretes = function() {
+            const lista = document.getElementById('listaLembretes'); lista.innerHTML = "";
+            const areaPerm = document.getElementById('areaPermissao');
+            
+            if (areaPerm) { areaPerm.style.display = ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") ? 'block' : 'none'; }
+            if (lembretes.length === 0) return lista.innerHTML = "<p style='text-align:center; color:#999; font-size:12px;'>Nenhum alarme configurado.</p>";
+            
+            const iconesSom = { padrao: '🔔', rapido: '🚨', sirene: '🚑', suave: '🎵' };
+            const diasNomesCurto = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            
+            lembretes.forEach(l => { 
+                const icone = iconesSom[l.tipoSom] || '🔔';
+                let diasTexto = "";
+                
+                if (l.dataExata) {
+                    diasTexto = "📅 Apenas em " + l.dataExata.split('-').reverse().join('/');
+                } else {
+                    const diasRep = l.dias || [0,1,2,3,4,5,6];
+                    diasTexto = "🔄 " + (diasRep.length === 7 ? "Todos os dias" : diasRep.map(d => diasNomesCurto[d]).join(', '));
+                }
+
+                lista.innerHTML += `
+                <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid var(--laranja);">
+                    <div>
+                        <div style="font-weight: bold; font-size: 18px; color: #333;">⏰ ${l.hora}</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 3px;">${icone} ${l.nome}</div>
+                        <div style="font-size: 11px; color: var(--primaria); margin-top: 3px; font-weight: bold;">${diasTexto}</div>
+                    </div>
+                    <button onclick="excluirLembrete(${l.id})" style="background: transparent; color: #f44336; font-size: 20px; padding: 5px; width: auto; border: none;">🗑️</button>
+                </div>`; 
+            });
+        };
+
+        window.checarAlarmes = function() {
+            if (lembretes.length === 0) return;
+            const agora = new Date(); 
+            const horaAtual = agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0'); 
+            const dataHoje = agora.toISOString().split('T')[0];
+            const diaSemanaHoje = agora.getDay(); // 0 a 6 (Domingo a Sábado)
+
+            lembretes.forEach(l => {
+                let deveTocar = false;
+                
+                // Checa se é um alarme de Data Exata (Consultas, Vencimentos) ou de Repetição (Dias da Semana)
+                if (l.dataExata) {
+                    if (l.dataExata === dataHoje && l.hora === horaAtual) deveTocar = true;
+                } else {
+                    const diasRepeticao = l.dias || [0,1,2,3,4,5,6];
+                    if (diasRepeticao.includes(diaSemanaHoje) && l.hora === horaAtual) deveTocar = true;
+                }
+
+                if (deveTocar) {
+                    const chaveDisparo = `${l.id}_${dataHoje}_${horaAtual}`;
+                    if (!lembretesDisparadosHoje[chaveDisparo]) { 
+                        window.dispararNotificacao(l.nome, l.tipoSom || 'padrao'); 
+                        lembretesDisparadosHoje[chaveDisparo] = true; 
+                    }
+                }
+            });
+        };
+
+        window.dispararNotificacao = function(mensagem, tipoSom = 'padrao') {
+            msgAlarmeAtual = mensagem;
+            tipoSomAlarmeAtual = tipoSom;
+            
+            document.getElementById('textoModalAlarme').innerText = mensagem;
+            document.getElementById('modalAlarme').style.display = 'flex';
+            
+            // Toca um som imediatamente e depois repete até desligar
+            window.tocarSom(tipoSom);
+            if (intervalAudio) clearInterval(intervalAudio);
+            intervalAudio = setInterval(() => window.tocarSom(tipoSom), 2000); 
+            
+            if ("Notification" in window && Notification.permission === "granted") { 
+                new Notification("⏰ Lembrete GlicoGabi!", { body: mensagem, icon: "ICONE.png" }); 
+            }
+        };
+
+        window.pararAlarme = function() {
+            if (intervalAudio) clearInterval(intervalAudio);
+            document.getElementById('modalAlarme').style.display = 'none';
+        };
+
+        window.sonecaAlarme = function() {
+            window.pararAlarme(); // Para o som e esconde
+            // Programa de forma forçada para tocar daqui a 5 minutos exatos
+            setTimeout(() => {
+                window.dispararNotificacao(msgAlarmeAtual, tipoSomAlarmeAtual);
+            }, 5 * 60 * 1000); 
+        };
+
+        // --- RELATÓRIOS E LIMPEZA ---
+        window.salvarWpp = () => {
+            localStorage.setItem('gabi_wpp_gabi', document.getElementById('wppGabi').value);
+            localStorage.setItem('gabi_wpp_medico', document.getElementById('wppMedico').value);
+        };
+        
+        window.fecharRelatorio = () => document.getElementById('modalRelatorio').style.display = "none";
+        
+        window.verRelatorio = function(silent = false) { 
+            const mesSel = document.getElementById('selMes').value; 
+            const anoSel = document.getElementById('selAno').value; 
+            const semSel = document.getElementById('selSemana').value;
+            const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            const mesIdx = mesesNomes.indexOf(mesSel);
+            const diasNoMes = new Date(anoSel, mesIdx + 1, 0).getDate();
+
+            // Lógica para filtrar a semana
+            let startDay = 1; let endDay = diasNoMes;
+            if (semSel === '1') { startDay = 1; endDay = 7; }
+            else if (semSel === '2') { startDay = 8; endDay = 14; }
+            else if (semSel === '3') { startDay = 15; endDay = 21; }
+            else if (semSel === '4') { startDay = 22; endDay = 28; }
+            else if (semSel === '5') { startDay = 29; endDay = diasNoMes; }
+
+            const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]");
+            let html = ""; 
+            
+            // Loop vai montar a tabela APENAS nos dias selecionados da semana
+            for(let dia=startDay; dia<=endDay; dia++) { 
+                const dadosDoDia = banco.filter(item => { const dataObj = new Date(item.data + "T00:00:00"); return dataObj.getDate() === dia && mesesNomes[dataObj.getMonth()] === mesSel && dataObj.getFullYear().toString() === anoSel; });
+                const getVal = (m) => { const r = dadosDoDia.filter(d => d.momento.toLowerCase().includes(m.toLowerCase())); return r.length === 0 ? "" : r.map(d => `<b>${d.valor}</b>`).join('<br>'); };
+                html += `<tr><td><b>${dia}</b></td><td>${getVal('Jejum')}</td><td>${getVal('Pós café')}</td><td>${getVal('Antes do almoço')}</td><td>${getVal('Depois do almoço')}</td><td>${getVal('Antes da janta')}</td><td>${getVal('Depois da janta')}</td><td>${getVal('Dormir')}</td><td>${getVal('Madrugada')}</td></tr>`; 
+            } 
+            
+            let tituloMes = mesSel.toUpperCase();
+            if (semSel !== 'all') tituloMes += ` (SEMANA ${semSel})`;
+            
+            document.getElementById('txtMes').innerText = tituloMes; 
+            document.getElementById('txtAno').innerText = anoSel; 
+            document.getElementById('corpoRel').innerHTML = html; 
+            if(!silent) document.getElementById('modalRelatorio').style.display = "block"; 
+        };
+
+        window.exportarPDF = () => {
+            window.verRelatorio(true); // Atualiza a tabela silenciosamente para bater com a semana escolhida antes de baixar
+            const semSel = document.getElementById('selSemana').value;
+            const nomeArq = semSel === 'all' ? `Relatorio_Gabi_${document.getElementById('selMes').value}.pdf` : `Relatorio_Gabi_${document.getElementById('selMes').value}_Semana${semSel}.pdf`;
+            html2pdf().from(document.getElementById('areaRel')).set({ margin: [2,2,2,2], filename: nomeArq, jsPDF: { orientation: 'landscape' } }).save();
+        };
+
+        window.limparHistorico = function() {
+            if(confirm("ATENÇÃO: Isso apagará TODO o seu histórico de Glicemia! Continuar?")) {
+                localStorage.removeItem(CHAVE);
+                sincronizarComNuvem('glicemia', []); // Deleta na nuvem tbm
+                alert("Histórico apagado."); renderizarGlicemia();
+            }
+        };
+
+        window.enviarWpp = function() { 
+            const wppGabi = document.getElementById('wppGabi').value;
+            const wppMedico = document.getElementById('wppMedico').value;
+
+            // Pergunta para quem será enviado o relatório
+            const opcao = prompt("Para quem você deseja enviar o relatório?\n\nDigite 1 para Gabriela\nDigite 2 para Médico", "2");
+            if (opcao === null) return; // Se a pessoa clicar em "Cancelar", não faz nada
+
+            let num = "";
+            if (opcao === "1") {
+                num = wppGabi;
+                if(!num) return alert("O número da Gabriela não está preenchido!");
+            } else if (opcao === "2") {
+                num = wppMedico;
+                if(!num) return alert("O número do Médico não está preenchido!");
+            } else {
+                return alert("Opção inválida! Você precisa digitar o número 1 ou 2.");
+            }
+
+            const mesSel = document.getElementById('selMes').value; const anoSel = document.getElementById('selAno').value;
+            const semSel = document.getElementById('selSemana').value;
+            const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            const mesIdx = mesesNomes.indexOf(mesSel);
+            const diasNoMes = new Date(anoSel, mesIdx + 1, 0).getDate();
+
+            let startDay = 1; let endDay = diasNoMes;
+            if (semSel === '1') { startDay = 1; endDay = 7; }
+            else if (semSel === '2') { startDay = 8; endDay = 14; }
+            else if (semSel === '3') { startDay = 15; endDay = 21; }
+            else if (semSel === '4') { startDay = 22; endDay = 28; }
+            else if (semSel === '5') { startDay = 29; endDay = diasNoMes; }
+
+            let periodoTxt = semSel === 'all' ? `Mês: ${mesSel} / ${anoSel}` : `Mês: ${mesSel} / ${anoSel} (Semana ${semSel})`;
+            let texto = `*CONTROLE GLICÊMICO - GABRIELA*\n*${periodoTxt}*\n\n`;
+            
+            const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]"); let temDado = false;
+            
+            // CONSTRUINDO A MENSAGEM DO WHATSAPP DE FORMA SUPER ORGANIZADA (IMITANDO A TABELA)
+            for(let dia=startDay; dia<=endDay; dia++) {
+                const dadosDoDia = banco.filter(item => { const dataObj = new Date(item.data + "T00:00:00"); return dataObj.getDate() === dia && mesesNomes[dataObj.getMonth()] === mesSel && dataObj.getFullYear().toString() === anoSel; });
+                if(dadosDoDia.length > 0) {
+                    temDado = true; 
+                    texto += `*--- DIA ${String(dia).padStart(2, '0')} ---*\n`;
+                    
+                    const getValStr = (m) => { const r = dadosDoDia.filter(d => d.momento.toLowerCase().includes(m.toLowerCase())); return r.length === 0 ? " - " : r.map(x => x.valor).join(", "); };
+                    
+                    texto += `🌅 *Café da Manhã* ➔ Ant: ${getValStr('Jejum')} | Dep: ${getValStr('Pós café')}\n`;
+                    texto += `🍽️ *Almoço* ➔ Ant: ${getValStr('Antes do almoço')} | Dep: ${getValStr('Depois do almoço')}\n`;
+                    texto += `🍲 *Jantar* ➔ Ant: ${getValStr('Antes da janta')} | Dep: ${getValStr('Depois da janta')}\n`;
+                    texto += `🌙 *Noite* ➔ Dormir: ${getValStr('Dormir')} | Madrug: ${getValStr('Madrugada')}\n\n`;
+                }
+            }
+            if(!temDado) texto += `Nenhuma medição registrada neste período.`;
+            
+            // Limpa parênteses, espaços e traços do número e usa o link universal
+            const numLimpo = num.replace(/\D/g, '');
+            window.open(`https://api.whatsapp.com/send?phone=55${numLimpo}&text=${encodeURIComponent(texto)}`); 
+        };
     </script>
 </body>
 </html>
