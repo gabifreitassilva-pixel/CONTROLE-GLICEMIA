@@ -1,10 +1,10 @@
 // Aumente a versão (ex: v16, v17...) sempre que fizer alterações para o celular atualizar o cache
-const CACHE_NAME = 'glicogabi-v16'; 
+const CACHE_NAME = 'glicogabi-v17'; 
 
 const ASSETS = [
   'index.html',
   'ICONE.png', 
-  'manifest.json'
+  'MANIFEST.JSON'
 ];
 
 self.addEventListener('install', (e) => {
