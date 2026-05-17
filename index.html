@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>GlicoGabi</title>
     
-    <link rel="manifest" href="MANIFEST.JOSON">
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="ICONE.png">
     <meta name="theme-color" content="#7e57ff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- Bibliotecas Externas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -51,7 +50,7 @@
             background: none; border: none; color: white; cursor: pointer; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             flex: 1; opacity: 0.6; transition: 0.2s; 
-            min-width: 0; /* Trava importante para telas pequenas */
+            min-width: 0;
             padding: 0 2px;
         }
         .tab-btn i { font-size: 20px; margin-bottom: 3px; font-style: normal; }
@@ -61,7 +60,6 @@
         }
         .tab-btn.active { opacity: 1; }
 
-        /* Ajuste fino para celulares muito estreitos */
         @media (max-width: 380px) {
             .tab-btn span { font-size: 7px; }
             .tab-btn i { font-size: 17px; margin-bottom: 2px; }
@@ -96,14 +94,12 @@
         .tabs .tab-btn-inner.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,.1); }
         .section-box { background: var(--lavanda-claro); margin: 0 15px 15px; padding: 15px; border-radius: 20px; border: 1px solid var(--lavanda-medio); }
         
-        /* Tabela responsiva (rolagem lateral no celular) */
         .table-responsive { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; border-radius: 10px; max-width: 100%; }
         table { width: 100%; border-collapse: collapse; background: white; min-width: 320px; }
         th { background: var(--primaria); color: white; padding: 10px; font-size: 12px; text-align: left; }
         td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 14px; }
         .hidden { display: none !important; }
 
-        /* Modal Relatório */
         #modalRelatorio { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: none; overflow: auto; }
         .rel-topo { background: var(--primaria); color: white; padding: 15px; display: flex; justify-content: space-between; position: sticky; top: 0; }
         .folha { padding: 8mm; width: 275mm; margin: auto; background: white; color: black; }
@@ -113,7 +109,6 @@
 
         .resumo-dia { text-align: center; font-size: 12px; color: #555; margin-bottom: 10px; font-weight: bold; }
 
-        /* Modal Alarme Inteligente */
         #modalAlarme { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.85); z-index: 99999; display: none; 
@@ -132,7 +127,6 @@
         .btn-desligar { background: var(--verde); color: white; }
         .btn-soneca { background: #ffc107; color: #333; }
         
-        /* Checkbox Dias da Semana */
         .dia-checkbox-lbl {
             background: white; padding: 6px 10px; border-radius: 8px; font-size: 11px; 
             text-transform: none; display: flex; align-items: center; gap: 4px; border: 1px solid #ddd; cursor: pointer;
@@ -143,7 +137,6 @@
 
     <div class="content-container">
         
-        <!-- 1. TELA HOME -->
         <div id="tela-home" class="tela active">
             <div class="header">
                 <h1>GlicoGabi</h1><p>Controle de Glicemia</p>
@@ -175,7 +168,6 @@
             <div id="historicoGlicemia" class="history-list"></div>
         </div>
 
-        <!-- 2. TELA CONSULTAS -->
         <div id="tela-consultas" class="tela">
             <div class="header"><h1>Consultas</h1><p>Agenda da Gabriela</p></div>
             <div class="input-area">
@@ -192,7 +184,6 @@
             <div id="historicoConsultas" class="history-list"></div>
         </div>
 
-        <!-- 3. TELA LINHA DO TEMPO (HISTÓRICO) -->
         <div id="tela-historico" class="tela">
             <div class="header"><h1>Linha do Tempo</h1><p>Eventos importantes e evolução</p></div>
             <div class="input-area">
@@ -215,7 +206,6 @@
             <div id="historicoEventos" class="history-list"></div>
         </div>
 
-        <!-- 4. TELA ESTOQUE -->
         <div id="tela-estoque" class="tela">
             <div class="header"><h1>Estoque</h1><p>Controle de insumos</p></div>
             
@@ -237,11 +227,9 @@
             </div>
         </div>
 
-        <!-- 5. TELA AJUSTES -->
         <div id="tela-ajustes" class="tela">
             <div class="header"><h1>Ajustes</h1><p>Configurações e Relatórios</p></div>
             
-            <!-- BLOCO DE SINCRONIZAÇÃO NUVEM -->
             <div class="section-box" style="background: #fff; border: 2px solid var(--verde); margin-top: 15px;">
                 <label style="color: var(--verde);">☁️ SINCRONIZAÇÃO EM NUVEM</label>
                 <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Crie um código secreto. Use o mesmo código no PC e no Celular para manter os dados iguais e os alarmes sincronizados.</p>
@@ -289,8 +277,7 @@
                     <div style="margin-top: 25px; border-top: 1px solid #ddd; padding-top: 15px;">
                         <label>📜 HISTÓRICO DE ALTERAÇÕES</label>
                         <div id="listaHistoricoMeds" style="margin-top: 10px; max-height: 150px; overflow-y: auto; font-size: 12px; color: #555;">
-                            <!-- Histórico renderizado aqui -->
-                        </div>
+                            </div>
                     </div>
                 </div>
             </div>
@@ -335,7 +322,6 @@
             </div>
         </div>
 
-        <!-- 6. TELA ALERTAS (LEMBRETES) -->
         <div id="tela-alertas" class="tela">
             <div class="header"><h1>Alertas</h1><p>Rotina Diária</p></div>
             
@@ -379,7 +365,6 @@
 
     </div>
 
-    <!-- MENU INFERIOR -->
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="navegar('tela-home', this)"><i>🏠</i><span>Home</span></button>
         <button class="tab-btn" onclick="navegar('tela-consultas', this)"><i>🩺</i><span>Consultas</span></button>
@@ -389,7 +374,6 @@
         <button class="tab-btn" onclick="navegar('tela-ajustes', this)"><i>⚙️</i><span>Ajustes</span></button>
     </div>
 
-    <!-- MODAL DO RELATÓRIO PDF -->
     <div id="modalRelatorio">
         <div class="rel-topo"><b>RELATÓRIO MÉDICO</b><button onclick="fecharRelatorio()" style="width:auto; background:none; border:none; color:white; font-weight:bold;">FECHAR X</button></div>
         <div id="areaRel" class="folha">
@@ -417,7 +401,6 @@
         </div>
     </div>
 
-    <!-- MODAL DO ALARME NA TELA -->
     <div id="modalAlarme">
         <div class="alarme-box">
             <div style="font-size: 50px; margin-bottom: 5px;">⏰</div>
@@ -429,7 +412,6 @@
         </div>
     </div>
 
-    <!-- IMPORTAÇÃO E LÓGICA DO FIREBASE COMO MÓDULO -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -1273,6 +1255,16 @@
             const numLimpo = num.replace(/\D/g, '');
             window.open(`https://api.whatsapp.com/send?phone=55${numLimpo}&text=${encodeURIComponent(texto)}`); 
         };
+    </script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('SW.js')
+                .then(reg => console.log('SW registrado com sucesso!', reg))
+                .catch(err => console.error('Falha no registro do SW:', err));
+            });
+        }
     </script>
 </body>
 </html>
