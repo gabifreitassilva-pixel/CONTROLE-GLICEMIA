@@ -27,7 +27,7 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body, html { 
-            margin: 0; padding: 0; height: 100%; width: 100%; 
+            margin: 0; padding: 0; height: 100%; width: 100%; max-width: 100vw;
             background-color: var(--primaria); 
             display: flex; flex-direction: column; 
             font-family: 'Segoe UI', sans-serif; overflow: hidden; 
@@ -35,7 +35,7 @@
 
         .content-container { 
             flex: 1; background: white; border-radius: 0 0 25px 25px; 
-            overflow-y: auto; width: 100%; 
+            overflow-y: auto; overflow-x: hidden; width: 100%; 
         }
 
         .tela { display: none; width: 100%; min-height: 100%; background: white; padding-bottom: 20px; }
@@ -51,10 +51,22 @@
             background: none; border: none; color: white; cursor: pointer; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             flex: 1; opacity: 0.6; transition: 0.2s; 
+            min-width: 0; /* Trava importante para telas pequenas */
+            padding: 0 2px;
         }
         .tab-btn i { font-size: 20px; margin-bottom: 3px; font-style: normal; }
-        .tab-btn span { font-size: 8px; font-weight: bold; text-transform: uppercase; }
+        .tab-btn span { 
+            font-size: 8px; font-weight: bold; text-transform: uppercase; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+        }
         .tab-btn.active { opacity: 1; }
+
+        /* Ajuste fino para celulares muito estreitos */
+        @media (max-width: 380px) {
+            .tab-btn span { font-size: 7px; }
+            .tab-btn i { font-size: 17px; margin-bottom: 2px; }
+            .nav-tabs { padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
+        }
 
         .header { background: var(--primaria); color: white; padding: 20px; text-align: center; }
         .header h1 { margin: 0; font-size: 28px; }
@@ -85,7 +97,7 @@
         .section-box { background: var(--lavanda-claro); margin: 0 15px 15px; padding: 15px; border-radius: 20px; border: 1px solid var(--lavanda-medio); }
         
         /* Tabela responsiva (rolagem lateral no celular) */
-        .table-responsive { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; border-radius: 10px; }
+        .table-responsive { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; border-radius: 10px; max-width: 100%; }
         table { width: 100%; border-collapse: collapse; background: white; min-width: 320px; }
         th { background: var(--primaria); color: white; padding: 10px; font-size: 12px; text-align: left; }
         td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -135,7 +147,29 @@
 
             <div id="resumoDia" class="resumo-dia"></div>
 
-            <div id="historicoGlicemia" class="history-list"></div>
+            <div class="section-box" style="margin: 0 15px 20px; padding: 10px; background: white;">
+                <div style="font-size: 12px; font-weight: bold; color: var(--primaria); text-align: center; margin-bottom: 10px; text-transform: uppercase;">📊 Tabela do Mês Selecionado</div>
+                <div class="table-responsive">
+                    <table class="tab-rel" style="min-width: 600px;">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="width:10mm">Dia</th>
+                                <th colspan="2">Café da Manhã</th>
+                                <th colspan="2">Almoço</th>
+                                <th colspan="2">Jantar</th>
+                                <th rowspan="2">Antes Dormir</th>
+                                <th rowspan="2">Madrugada</th>
+                            </tr>
+                            <tr>
+                                <th>Antes</th><th>Depois</th>
+                                <th>Antes</th><th>Depois</th>
+                                <th>Antes</th><th>Depois</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabelaHome"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- 2. TELA CONSULTAS -->
@@ -542,40 +576,64 @@
         };
 
         window.renderizarGlicemia = function() {
-            const lista = document.getElementById('historicoGlicemia');
             const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]");
             const dataFiltro = document.getElementById('data_r').value;
-            lista.innerHTML = "";
-            const filtrados = banco.filter(item => item.data === dataFiltro).sort((a,b) => a.hora.localeCompare(b.hora));
+            const dataObjFiltro = new Date(dataFiltro + "T00:00:00");
+            const mesAtual = dataObjFiltro.getMonth();
+            const anoAtual = dataObjFiltro.getFullYear();
+            const diasNoMes = new Date(anoAtual, mesAtual + 1, 0).getDate();
+            
+            // 1. Renderiza a Tabela do Mês na Home
+            let htmlTabela = "";
+            for(let dia=1; dia<=diasNoMes; dia++) {
+                const dadosDoDia = banco.filter(item => { 
+                    const dObj = new Date(item.data + "T00:00:00"); 
+                    return dObj.getDate() === dia && dObj.getMonth() === mesAtual && dObj.getFullYear() === anoAtual; 
+                });
+                
+                const getVal = (m) => { 
+                    const r = dadosDoDia.filter(d => d.momento.toLowerCase().includes(m.toLowerCase())); 
+                    return r.length === 0 ? "" : r.map(d => `<div style="position:relative; display:inline-block; margin:2px;"><b>${d.valor}</b><span onclick="excluirGlicemia(${d.id})" style="color:#f44336; font-size:14px; cursor:pointer; margin-left:3px; font-weight:bold;">&times;</span></div>`).join('<br>'); 
+                };
+                
+                let trClass = dia === dataObjFiltro.getDate() ? 'style="background-color: #f4f0ff;"' : '';
 
-            let somaGlicemia = 0; let agrupados = {};
-            filtrados.forEach(item => { somaGlicemia += item.valor; if(!agrupados[item.momento]) agrupados[item.momento] = []; agrupados[item.momento].push(item); });
-
-            // RENDERIZAR OS CARDS NA TELA HOME
-            for(let momento in agrupados) {
-                let itens = agrupados[momento];
-                let htmlItens = itens.map(item => {
-                    let corTexto = item.valor > 180 ? 'var(--vermelho)' : (item.valor < 70 ? 'var(--azul)' : 'var(--verde)');
-                    let msgIncentivo = "";
-                    let isJejum = item.momento.toLowerCase().includes("jejum") || item.momento.toLowerCase().includes("madrugada");
-                    if (item.valor < 70) msgIncentivo = "⚠️ Hipoglicemia. Consuma um carboidrato rápido e repita o teste em 15 min. Cuide-se!";
-                    else if (item.valor > 250) msgIncentivo = "🚨 Está alto. Beba água, verifique a insulina e não desanime, você consegue baixar!";
-                    else if (item.valor > 180) msgIncentivo = "👀 Fique atento(a). Um pouco acima do limite, mas ajustar faz parte do processo!";
-                    else if (isJejum && item.valor > 130) msgIncentivo = "⚠️ Um pouco acima do ideal para jejum. Fique de olho, mas siga firme no tratamento!";
-                    else msgIncentivo = "🌟 Excelente! Nível dentro do limite. Continue com esse ótimo cuidado!";
-
-                    return `
-                        <div style="border-bottom: 1px solid #eee; padding: 12px 0; border-radius: 0;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                <div class="card-val" style="margin: 0;"><span style="color: ${corTexto};">${item.valor}</span><small style="font-size: 14px; color: #666; font-weight: normal;">mg/dL</small></div>
-                                <div style="display: flex; align-items: center; gap: 15px;"><span style="font-size: 12px; color: #999;">⏰ ${item.hora}</span><button class="btn-excluir" onclick="excluirGlicemia(${item.id})">✕</button></div>
-                            </div>
-                            <div style="font-size: 12px; color: #555; background-color: #f9f9f9; padding: 6px; border-radius: 6px; font-style: italic;">${msgIncentivo}</div>
-                        </div>`;
-                }).join('');
-                lista.innerHTML += `<div class="card" style="border-left-color: var(--primaria); padding-bottom: 5px;"><div class="card-header" style="border-bottom: 2px solid #f4f0ff; padding-bottom: 5px; margin-bottom: 5px;"><span style="font-size: 16px;">${momento}</span></div>${htmlItens}</div>`;
+                htmlTabela += `<tr ${trClass}>
+                    <td><b>${dia}</b></td>
+                    <td>${getVal('Jejum')}</td>
+                    <td>${getVal('Pós café')}</td>
+                    <td>${getVal('Antes do almoço')}</td>
+                    <td>${getVal('Depois do almoço')}</td>
+                    <td>${getVal('Antes da janta')}</td>
+                    <td>${getVal('Depois da janta')}</td>
+                    <td>${getVal('Dormir')}</td>
+                    <td>${getVal('Madrugada')}</td>
+                </tr>`;
             }
-            document.getElementById('resumoDia').innerHTML = filtrados.length > 0 ? `Média do dia: <b>${Math.round(somaGlicemia / filtrados.length)} mg/dL</b> (${filtrados.length} medições)` : `Nenhuma medição registrada para este dia.`;
+            document.getElementById('corpoTabelaHome').innerHTML = htmlTabela;
+
+            // 2. Renderiza o Resumo e a Mensagem Motivacional
+            const filtradosHoje = banco.filter(item => item.data === dataFiltro).sort((a,b) => b.hora.localeCompare(a.hora));
+            const divResumo = document.getElementById('resumoDia');
+            
+            if (filtradosHoje.length > 0) {
+                const ultimo = filtradosHoje[0];
+                let msgIncentivo = "";
+                let isJejum = ultimo.momento.toLowerCase().includes("jejum") || ultimo.momento.toLowerCase().includes("madrugada");
+                
+                if (ultimo.valor < 70) msgIncentivo = "⚠️ Hipoglicemia. Consuma um carboidrato rápido e repita o teste em 15 min. Cuide-se!";
+                else if (ultimo.valor > 250) msgIncentivo = "🚨 Está alto. Beba água, verifique a insulina e não desanime, você consegue baixar!";
+                else if (ultimo.valor > 180) msgIncentivo = "👀 Fique atento(a). Um pouco acima do limite, mas ajustar faz parte do processo!";
+                else if (isJejum && ultimo.valor > 130) msgIncentivo = "⚠️ Um pouco acima do ideal para jejum. Fique de olho, mas siga firme no tratamento!";
+                else msgIncentivo = "🌟 Excelente! Nível dentro do limite. Continue com esse ótimo cuidado!";
+                
+                divResumo.innerHTML = `<div style="background: white; border-left: 5px solid var(--primaria); padding: 10px; border-radius: 10px; margin: 10px 15px 15px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                    <div style="font-size: 11px; color: #999; margin-bottom: 3px; text-transform: uppercase;">Última Medição Hoje (${ultimo.hora}): <b style="color: var(--primaria); font-size: 14px;">${ultimo.valor} mg/dL</b></div>
+                    <div style="font-size: 13px; color: #555; font-style: italic;">${msgIncentivo}</div>
+                </div>`;
+            } else {
+                divResumo.innerHTML = `<div style="margin: 10px 15px 20px; font-size: 12px; color: #999; text-align: center;">Nenhuma medição registrada para a data selecionada.</div>`;
+            }
         };
 
         // --- ESTOQUE ---
