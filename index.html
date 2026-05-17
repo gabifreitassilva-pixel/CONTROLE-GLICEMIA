@@ -338,7 +338,13 @@
                     <input type="text" id="nomeLembrete" placeholder="Ex: Medir Glicose / Tomar NPH" style="flex: 2;">
                     <input type="time" id="horaLembrete" style="flex: 1;">
                 </div>
-                <button class="btn-acao" onclick="salvarLembrete()" style="margin-bottom: 0;">Salvar Alarme</button>
+                <select id="tipoSomLembrete" style="margin-top: 5px; width: 100%;">
+                    <option value="padrao">🔔 Som: Bipe Padrão</option>
+                    <option value="rapido">🚨 Som: Bipe Rápido</option>
+                    <option value="sirene">🚑 Som: Sirene</option>
+                    <option value="suave">🎵 Som: Toque Suave</option>
+                </select>
+                <button class="btn-acao" onclick="salvarLembrete()" style="margin-top: 10px; margin-bottom: 0;">Salvar Alarme</button>
             </div>
 
             <div class="section-box" style="margin-top: 15px; text-align: center; display: none;" id="areaPermissao">
@@ -451,6 +457,7 @@
         // Variaveis de Áudio e Alarme na tela
         let intervalAudio = null;
         let msgAlarmeAtual = "";
+        let tipoSomAlarmeAtual = "padrao";
 
         // Variaveis de dados
         let consultas = JSON.parse(localStorage.getItem('gabi_consultas')) || [];
@@ -598,7 +605,7 @@
                 let h = (parseInt(partes[0]) + 1) % 24; 
                 let m = parseInt(partes[1]);
                 let horaAlarme = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0');
-                lembretes.push({ id: Date.now() + 1, nome: `⏰ Medir Glicose Novamente (${novoRegistro.momento})`, hora: horaAlarme });
+                lembretes.push({ id: Date.now() + 1, nome: `⏰ Medir Glicose Novamente (${novoRegistro.momento})`, hora: horaAlarme, tipoSom: 'padrao' });
                 lembretes.sort((a, b) => a.hora.localeCompare(b.hora));
                 localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes));
                 sincronizarComNuvem('lembretes', lembretes); // <--- SYNC
@@ -837,15 +844,43 @@
         };
 
         // --- ALARMES E JANELA DE NOTIFICAÇÃO NA TELA ---
-        window.tocarBipe = function() {
+        window.tocarSom = function(tipo) {
             try { 
                 const ctx = new (window.AudioContext || window.webkitAudioContext)(); 
                 const osc = ctx.createOscillator(); 
-                osc.type = 'sine'; 
-                osc.frequency.setValueAtTime(880, ctx.currentTime); 
-                osc.connect(ctx.destination); 
-                osc.start(); 
-                osc.stop(ctx.currentTime + 0.3); 
+                const gainNode = ctx.createGain();
+                
+                osc.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                if (tipo === 'rapido') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(800, ctx.currentTime);
+                    osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.1);
+                    osc.start(); 
+                    osc.stop(ctx.currentTime + 0.2);
+                } else if (tipo === 'sirene') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(1000, ctx.currentTime + 0.3);
+                    osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.6);
+                    osc.start(); 
+                    osc.stop(ctx.currentTime + 0.6);
+                } else if (tipo === 'suave') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, ctx.currentTime); // Nota La
+                    gainNode.gain.setValueAtTime(0, ctx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.5);
+                    gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
+                    osc.start(); 
+                    osc.stop(ctx.currentTime + 1);
+                } else {
+                    // padrao
+                    osc.type = 'sine'; 
+                    osc.frequency.setValueAtTime(880, ctx.currentTime); 
+                    osc.start(); 
+                    osc.stop(ctx.currentTime + 0.3); 
+                }
             } catch(e) {}
         };
 
@@ -853,23 +888,54 @@
             if (!("Notification" in window)) return alert("Seu navegador não suporta notificações nativas.");
             Notification.requestPermission().then(permission => { if (permission === "granted") { document.getElementById('areaPermissao').style.display = 'none'; alert("Notificações ativadas!"); } });
         };
+        
         window.salvarLembrete = function() {
-            const nome = document.getElementById('nomeLembrete').value; const hora = document.getElementById('horaLembrete').value;
+            const nome = document.getElementById('nomeLembrete').value; 
+            const hora = document.getElementById('horaLembrete').value;
+            const tipoSom = document.getElementById('tipoSomLembrete').value || 'padrao';
+            
             if(!nome || !hora) return alert("Preencha o nome e o horário do alarme!");
-            lembretes.push({ id: Date.now(), nome, hora }); lembretes.sort((a, b) => a.hora.localeCompare(b.hora));
-            localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes)); sincronizarComNuvem('lembretes', lembretes);
-            document.getElementById('nomeLembrete').value = ""; document.getElementById('horaLembrete').value = ""; renderizarLembretes(); alert("Alarme ativado!");
+            
+            lembretes.push({ id: Date.now(), nome, hora, tipoSom }); 
+            lembretes.sort((a, b) => a.hora.localeCompare(b.hora));
+            
+            localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes)); 
+            sincronizarComNuvem('lembretes', lembretes);
+            
+            document.getElementById('nomeLembrete').value = ""; 
+            document.getElementById('horaLembrete').value = ""; 
+            renderizarLembretes(); 
+            alert("Alarme ativado!");
         };
+
         window.excluirLembrete = function(id) {
             if(!confirm("Excluir este alarme?")) return;
-            lembretes = lembretes.filter(l => l.id !== id); localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes)); sincronizarComNuvem('lembretes', lembretes); renderizarLembretes();
+            lembretes = lembretes.filter(l => l.id !== id); 
+            localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes)); 
+            sincronizarComNuvem('lembretes', lembretes); 
+            renderizarLembretes();
         };
+
         window.renderizarLembretes = function() {
             const lista = document.getElementById('listaLembretes'); lista.innerHTML = "";
             const areaPerm = document.getElementById('areaPermissao');
+            
             if (areaPerm) { areaPerm.style.display = ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") ? 'block' : 'none'; }
             if (lembretes.length === 0) return lista.innerHTML = "<p style='text-align:center; color:#999; font-size:12px;'>Nenhum alarme configurado.</p>";
-            lembretes.forEach(l => { lista.innerHTML += `<div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid var(--laranja);"><div><div style="font-weight: bold; font-size: 18px; color: #333;">⏰ ${l.hora}</div><div style="font-size: 14px; color: #666; margin-top: 3px;">${l.nome}</div></div><button onclick="excluirLembrete(${l.id})" style="background: transparent; color: #f44336; font-size: 20px; padding: 5px; width: auto; border: none;">🗑️</button></div>`; });
+            
+            const iconesSom = { padrao: '🔔', rapido: '🚨', sirene: '🚑', suave: '🎵' };
+            
+            lembretes.forEach(l => { 
+                const icone = iconesSom[l.tipoSom] || '🔔';
+                lista.innerHTML += `
+                <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid var(--laranja);">
+                    <div>
+                        <div style="font-weight: bold; font-size: 18px; color: #333;">⏰ ${l.hora}</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 3px;">${icone} ${l.nome}</div>
+                    </div>
+                    <button onclick="excluirLembrete(${l.id})" style="background: transparent; color: #f44336; font-size: 20px; padding: 5px; width: auto; border: none;">🗑️</button>
+                </div>`; 
+            });
         };
 
         window.checarAlarmes = function() {
@@ -878,20 +944,25 @@
             lembretes.forEach(l => {
                 if (l.hora === horaAtual) {
                     const chaveDisparo = `${l.id}_${dataHoje}_${horaAtual}`;
-                    if (!lembretesDisparadosHoje[chaveDisparo]) { window.dispararNotificacao(l.nome); lembretesDisparadosHoje[chaveDisparo] = true; }
+                    if (!lembretesDisparadosHoje[chaveDisparo]) { 
+                        window.dispararNotificacao(l.nome, l.tipoSom || 'padrao'); 
+                        lembretesDisparadosHoje[chaveDisparo] = true; 
+                    }
                 }
             });
         };
 
-        window.dispararNotificacao = function(mensagem) {
+        window.dispararNotificacao = function(mensagem, tipoSom = 'padrao') {
             msgAlarmeAtual = mensagem;
+            tipoSomAlarmeAtual = tipoSom;
+            
             document.getElementById('textoModalAlarme').innerText = mensagem;
             document.getElementById('modalAlarme').style.display = 'flex';
             
-            // Toca um bipe imediatamente e depois repete até desligar
-            window.tocarBipe();
+            // Toca um som imediatamente e depois repete até desligar
+            window.tocarSom(tipoSom);
             if (intervalAudio) clearInterval(intervalAudio);
-            intervalAudio = setInterval(window.tocarBipe, 2000); // Bipa a cada 2 segundos
+            intervalAudio = setInterval(() => window.tocarSom(tipoSom), 2000); 
             
             if ("Notification" in window && Notification.permission === "granted") { 
                 new Notification("⏰ Lembrete GlicoGabi!", { body: mensagem, icon: "ICONE.png" }); 
@@ -907,7 +978,7 @@
             window.pararAlarme(); // Para o som e esconde
             // Programa de forma forçada para tocar daqui a 5 minutos exatos
             setTimeout(() => {
-                window.dispararNotificacao(msgAlarmeAtual);
+                window.dispararNotificacao(msgAlarmeAtual, tipoSomAlarmeAtual);
             }, 5 * 60 * 1000); 
         };
 
