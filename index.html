@@ -1012,10 +1012,10 @@
         window.tocarSom = function(tipo) {
             try { 
                 const ringtoneUrls = {
-                    ringtone023: "http://googleusercontent.com/file_content/0",
-                    ringtone030: "http://googleusercontent.com/file_content/1",
-                    ringtone057: "http://googleusercontent.com/file_content/2",
-                    ringtone020: "http://googleusercontent.com/file_content/3"
+                    ringtone023: "universfield-ringtone-023-376906.mp3",
+                    ringtone030: "universfield-ringtone-030-437513.mp3",
+                    ringtone057: "universfield-ringtone-057-495413.mp3",
+                    ringtone020: "universfield-ringtone-020-365650.mp3"
                 };
 
                 if (ringtoneUrls[tipo] || tipo === 'custom') {
@@ -1243,7 +1243,7 @@
         };
 
         window.dispararNotificacao = function(mensagem, tipoSom = 'padrao') {
-            msgAlarmeAtual = message;
+            msgAlarmeAtual = mensagem;
             tipoSomAlarmeAtual = tipoSom;
             
             document.getElementById('textoModalAlarme').innerText = mensagem;
