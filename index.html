@@ -84,7 +84,9 @@
         .tabs .tab-btn-inner.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,.1); }
         .section-box { background: var(--lavanda-claro); margin: 0 15px 15px; padding: 15px; border-radius: 20px; border: 1px solid var(--lavanda-medio); }
         
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+        /* Tabela responsiva (rolagem lateral no celular) */
+        .table-responsive { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 320px; }
         th { background: var(--primaria); color: white; padding: 10px; font-size: 12px; text-align: left; }
         td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 14px; }
         .hidden { display: none !important; }
@@ -156,6 +158,7 @@
         <div id="tela-historico" class="tela">
             <div class="header"><h1>Linha do Tempo</h1><p>Eventos importantes e evolução</p></div>
             <div class="input-area">
+                <input type="hidden" id="editHistId" value="-1">
                 <div style="display: flex; gap: 10px;">
                     <div style="flex: 1;">
                         <label>Mês</label>
@@ -169,7 +172,7 @@
                     <div style="flex: 1;"><label>Ano</label><input type="number" id="ano_hist" value="2024"></div>
                 </div>
                 <label>Descrição</label><textarea id="descricao_hist" placeholder="Ex: Mudança de insulina, início de academia..."></textarea>
-                <button style="background-color: var(--laranja);" onclick="salvarLinhaTempo()">Salvar Dados</button>
+                <button id="btnSalvarHist" class="btn-acao" style="background-color: var(--laranja); margin-bottom: 0;" onclick="salvarLinhaTempo()">Salvar Dados</button>
             </div>
             <div id="historicoEventos" class="history-list"></div>
         </div>
@@ -180,11 +183,13 @@
             
             <div class="input-area">
                 <label>Adicionar Novo Insumo</label>
-                <div style="display: flex; gap: 5px;">
-                    <input type="text" id="nomeInsumo" placeholder="Ex: Fitas Accu-Chek" style="flex: 2;">
-                    <input type="number" id="qtdInsumo" placeholder="Qtd" style="flex: 1;">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <input type="text" id="nomeInsumo" placeholder="Ex: Fitas Accu-Chek" style="width: 100%;">
+                    <div style="display: flex; gap: 5px;">
+                        <input type="number" id="qtdInsumo" placeholder="Quantidade" style="flex: 1;">
+                        <input type="date" id="validadeInsumo" style="flex: 2;">
+                    </div>
                 </div>
-                <input type="date" id="validadeInsumo" style="margin-top: 5px; width: 100%;">
                 <button class="btn-acao" onclick="adicionarInsumo()" style="margin-top: 5px; margin-bottom: 0;">Cadastrar Insumo</button>
             </div>
 
@@ -202,9 +207,9 @@
             <div class="section-box" style="background: #fff; border: 2px solid var(--verde); margin-top: 15px;">
                 <label style="color: var(--verde);">☁️ SINCRONIZAÇÃO EM NUVEM</label>
                 <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Crie um código secreto. Use o mesmo código no PC e no Celular para manter os dados iguais e os alarmes sincronizados.</p>
-                <div style="display: flex; gap: 5px;">
-                    <input type="text" id="inputSyncCode" placeholder="Ex: GABI2026" style="flex: 2; text-transform: uppercase;">
-                    <button class="btn-acao" onclick="conectarNuvem()" style="flex: 1; margin-bottom: 0; background: var(--verde);">Conectar</button>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <input type="text" id="inputSyncCode" placeholder="Ex: GABI2026" style="width: 100%; text-transform: uppercase; margin-bottom: 0;">
+                    <button class="btn-acao" onclick="conectarNuvem()" style="width: 100%; margin-bottom: 0; background: var(--verde);">Conectar</button>
                 </div>
                 <p id="statusSync" style="font-size: 12px; color: var(--primaria); margin-top: 10px; font-weight: bold;">Status: Local (Desconectado)</p>
             </div>
@@ -217,18 +222,31 @@
             <div id="abaDoses">
                 <div class="section-box">
                     <label>MINHAS MEDICAÇÕES (PRESCRIÇÃO)</label>
-                    <div style="display:flex; gap:5px; margin-top:5px;">
+                    <div style="display:flex; flex-direction: column; gap: 8px; margin-top: 10px;">
                         <input type="hidden" id="editIdx" value="-1">
-                        <input type="text" id="nomeMed" placeholder="Medicação" style="flex:2;">
-                        <input type="text" id="horaMed" placeholder="Horário (Ex: Manhã)" style="flex:1.5;">
-                        <input type="text" id="qtdMed" placeholder="Dose (Ex: 15 UI)" style="flex:1;">
+                        <input type="text" id="nomeMed" placeholder="Medicação" style="width: 100%; margin-bottom: 0;">
+                        <select id="horaMed" style="width: 100%; margin-bottom: 0; padding: 12px; border-radius: 10px; border: 1px solid #ddd;">
+                            <option value="" disabled selected>Selecione o Horário</option>
+                            <option value="🌅 Jejum / Ao Acordar">🌅 Jejum / Ao Acordar</option>
+                            <option value="☕ Antes do Café">☕ Antes do Café</option>
+                            <option value="☕ Pós Café">☕ Pós Café</option>
+                            <option value="🍽️ Antes do Almoço">🍽️ Antes do Almoço</option>
+                            <option value="🍛 Pós Almoço">🍛 Pós Almoço</option>
+                            <option value="🌇 Antes da Janta">🌇 Antes da Janta</option>
+                            <option value="🍲 Pós Janta">🍲 Pós Janta</option>
+                            <option value="🌙 Antes de Dormir">🌙 Antes de Dormir</option>
+                            <option value="🌌 Madrugada">🌌 Madrugada</option>
+                        </select>
+                        <input type="text" id="qtdMed" placeholder="Dose (Ex: 15 UI)" style="width: 100%; margin-bottom: 0;">
                     </div>
-                    <button class="btn-acao" onclick="salvarDose()" style="margin-top: 10px;">Salvar Prescrição</button>
+                    <button class="btn-acao" onclick="salvarDose()" style="margin-top: 15px;">Salvar Prescrição</button>
                     
-                    <table style="margin-top: 10px;">
-                        <thead><tr><th>Medicação</th><th>Horário</th><th>Dose</th><th>Ações</th></tr></thead>
-                        <tbody id="listaMeds"></tbody>
-                    </table>
+                    <div class="table-responsive" style="margin-top: 15px;">
+                        <table style="margin-top: 0;">
+                            <thead><tr><th>Medicação</th><th>Horário</th><th>Dose</th><th>Ações</th></tr></thead>
+                            <tbody id="listaMeds"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             
@@ -236,8 +254,8 @@
                 <div class="section-box">
                     <label>GERAR RELATÓRIO PDF PARA O MÉDICO</label>
                     <p style="font-size: 11px; color: #666; margin-bottom: 10px;">O relatório incluirá a glicemia e as doses aplicadas.</p>
-                    <input type="text" id="wppInput" placeholder="WhatsApp do Médico (DDD + Número)" onchange="salvarWpp()">
-                    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                    <input type="text" id="wppInput" placeholder="WhatsApp (DDD + Número)" onchange="salvarWpp()" style="margin-bottom: 10px;">
+                    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
                         <select id="selMes" style="flex: 2; margin-bottom:0;">
                             <option value="Janeiro">Janeiro</option><option value="Fevereiro">Fevereiro</option>
                             <option value="Março">Março</option><option value="Abril">Abril</option>
@@ -533,6 +551,7 @@
             let somaGlicemia = 0; let agrupados = {};
             filtrados.forEach(item => { somaGlicemia += item.valor; if(!agrupados[item.momento]) agrupados[item.momento] = []; agrupados[item.momento].push(item); });
 
+            // RENDERIZAR OS CARDS NA TELA HOME
             for(let momento in agrupados) {
                 let itens = agrupados[momento];
                 let htmlItens = itens.map(item => {
@@ -632,15 +651,52 @@
 
         window.salvarLinhaTempo = function() {
             const mes = document.getElementById('mes_hist').value; const ano = document.getElementById('ano_hist').value; const desc = document.getElementById('descricao_hist').value;
+            const editId = document.getElementById('editHistId').value;
+            
             if (!desc) return alert("Preencha a descrição!");
             const nomesMeses = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-            eventos.push({ id: Date.now(), mesTxt: nomesMeses[mes], mes: mes, ano: ano, descricao: desc, timestamp: (parseInt(ano) * 12) + parseInt(mes) });
+            
+            if (editId === "-1") {
+                eventos.push({ id: Date.now(), mesTxt: nomesMeses[mes], mes: mes, ano: ano, descricao: desc, timestamp: (parseInt(ano) * 12) + parseInt(mes) });
+            } else {
+                const idx = eventos.findIndex(e => e.id == editId);
+                if (idx > -1) eventos[idx] = { id: parseInt(editId), mesTxt: nomesMeses[mes], mes: mes, ano: ano, descricao: desc, timestamp: (parseInt(ano) * 12) + parseInt(mes) };
+                document.getElementById('editHistId').value = "-1";
+                document.getElementById('btnSalvarHist').innerText = "Salvar Dados";
+                document.getElementById('btnSalvarHist').style.backgroundColor = "var(--laranja)";
+            }
+            
             eventos.sort((a, b) => b.timestamp - a.timestamp);
             localStorage.setItem('gabi_linha_tempo', JSON.stringify(eventos)); sincronizarComNuvem('linha_tempo', eventos); document.getElementById('descricao_hist').value = ""; renderizarLinhaTempo();
         };
+
+        window.editarLinhaTempo = function(id) {
+            const ev = eventos.find(e => e.id === id);
+            if (!ev) return;
+            document.getElementById('mes_hist').value = ev.mes;
+            document.getElementById('ano_hist').value = ev.ano;
+            document.getElementById('descricao_hist').value = ev.descricao;
+            document.getElementById('editHistId').value = ev.id;
+            
+            const btn = document.getElementById('btnSalvarHist');
+            btn.innerText = "Atualizar Evento";
+            btn.style.backgroundColor = "var(--primaria)";
+            document.querySelector('.content-container').scrollTo({top: 0, behavior: 'smooth'});
+        };
+
+        window.excluirLinhaTempo = function(id) {
+            if(!confirm("Excluir este evento da Linha do Tempo?")) return;
+            eventos = eventos.filter(e => e.id !== id);
+            localStorage.setItem('gabi_linha_tempo', JSON.stringify(eventos));
+            sincronizarComNuvem('linha_tempo', eventos);
+            renderizarLinhaTempo();
+        };
+
         window.renderizarLinhaTempo = function() {
             const lista = document.getElementById('historicoEventos'); lista.innerHTML = "";
-            eventos.forEach(e => { lista.innerHTML += `<div class="group-card"><div class="group-header"><span>${e.mesTxt} de ${e.ano}</span></div><div style="padding:15px">${e.descricao}</div></div>`; });
+            eventos.forEach(e => { 
+                lista.innerHTML += `<div class="group-card"><div class="group-header" style="align-items: center;"><span>${e.mesTxt} de ${e.ano}</span><div><button onclick="editarLinhaTempo(${e.id})" style="color: var(--primaria); margin-right: 15px; font-size: 16px; background: none; border: none; padding: 0;">✏️</button><button onclick="excluirLinhaTempo(${e.id})" style="color: #f44336; font-size: 16px; background: none; border: none; padding: 0;">✕</button></div></div><div style="padding:15px">${e.descricao}</div></div>`; 
+            });
         };
 
         // --- ALARMES ---
