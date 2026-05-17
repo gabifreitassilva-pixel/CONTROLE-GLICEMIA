@@ -11,7 +11,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- Bibliotecas Externas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -51,7 +50,7 @@
             background: none; border: none; color: white; cursor: pointer; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             flex: 1; opacity: 0.6; transition: 0.2s; 
-            min-width: 0; /* Trava importante para telas pequenas */
+            min-width: 0; 
             padding: 0 2px;
         }
         .tab-btn i { font-size: 20px; margin-bottom: 3px; font-style: normal; }
@@ -61,7 +60,6 @@
         }
         .tab-btn.active { opacity: 1; }
 
-        /* Ajuste fino para celulares muito estreitos */
         @media (max-width: 380px) {
             .tab-btn span { font-size: 7px; }
             .tab-btn i { font-size: 17px; margin-bottom: 2px; }
@@ -96,14 +94,12 @@
         .tabs .tab-btn-inner.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,.1); }
         .section-box { background: var(--lavanda-claro); margin: 0 15px 15px; padding: 15px; border-radius: 20px; border: 1px solid var(--lavanda-medio); }
         
-        /* Tabela responsiva (rolagem lateral no celular) */
         .table-responsive { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; border-radius: 10px; max-width: 100%; }
         table { width: 100%; border-collapse: collapse; background: white; min-width: 320px; }
         th { background: var(--primaria); color: white; padding: 10px; font-size: 12px; text-align: left; }
         td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 14px; }
         .hidden { display: none !important; }
 
-        /* Modal Relatório */
         #modalRelatorio { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: none; overflow: auto; }
         .rel-topo { background: var(--primaria); color: white; padding: 15px; display: flex; justify-content: space-between; position: sticky; top: 0; }
         .folha { padding: 8mm; width: 275mm; margin: auto; background: white; color: black; }
@@ -113,7 +109,6 @@
 
         .resumo-dia { text-align: center; font-size: 12px; color: #555; margin-bottom: 10px; font-weight: bold; }
 
-        /* Modal Alarme Inteligente */
         #modalAlarme { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.85); z-index: 99999; display: none; 
@@ -132,7 +127,6 @@
         .btn-desligar { background: var(--verde); color: white; }
         .btn-soneca { background: #ffc107; color: #333; }
         
-        /* Checkbox Dias da Semana */
         .dia-checkbox-lbl {
             background: white; padding: 6px 10px; border-radius: 8px; font-size: 11px; 
             text-transform: none; display: flex; align-items: center; gap: 4px; border: 1px solid #ddd; cursor: pointer;
@@ -143,7 +137,6 @@
 
     <div class="content-container">
         
-        <!-- 1. TELA HOME -->
         <div id="tela-home" class="tela active">
             <div class="header">
                 <h1>GlicoGabi</h1><p>Controle de Glicemia</p>
@@ -175,7 +168,6 @@
             <div id="historicoGlicemia" class="history-list"></div>
         </div>
 
-        <!-- 2. TELA CONSULTAS -->
         <div id="tela-consultas" class="tela">
             <div class="header"><h1>Consultas</h1><p>Agenda da Gabriela</p></div>
             <div class="input-area">
@@ -192,7 +184,6 @@
             <div id="historicoConsultas" class="history-list"></div>
         </div>
 
-        <!-- 3. TELA LINHA DO TEMPO (HISTÓRICO) -->
         <div id="tela-historico" class="tela">
             <div class="header"><h1>Linha do Tempo</h1><p>Eventos importantes e evolução</p></div>
             <div class="input-area">
@@ -215,7 +206,6 @@
             <div id="historicoEventos" class="history-list"></div>
         </div>
 
-        <!-- 4. TELA ESTOQUE -->
         <div id="tela-estoque" class="tela">
             <div class="header"><h1>Estoque</h1><p>Controle de insumos</p></div>
             
@@ -237,11 +227,9 @@
             </div>
         </div>
 
-        <!-- 5. TELA AJUSTES -->
         <div id="tela-ajustes" class="tela">
             <div class="header"><h1>Ajustes</h1><p>Configurações e Relatórios</p></div>
             
-            <!-- BLOCO DE SINCRONIZAÇÃO NUVEM -->
             <div class="section-box" style="background: #fff; border: 2px solid var(--verde); margin-top: 15px;">
                 <label style="color: var(--verde);">☁️ SINCRONIZAÇÃO EM NUVEM</label>
                 <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Crie um código secreto. Use o mesmo código no PC e no Celular para manter os dados iguais e os alarmes sincronizados.</p>
@@ -289,7 +277,6 @@
                     <div style="margin-top: 25px; border-top: 1px solid #ddd; padding-top: 15px;">
                         <label>📜 HISTÓRICO DE ALTERAÇÕES</label>
                         <div id="listaHistoricoMeds" style="margin-top: 10px; max-height: 150px; overflow-y: auto; font-size: 12px; color: #555;">
-                            <!-- Histórico renderizado aqui -->
                         </div>
                     </div>
                 </div>
@@ -335,7 +322,6 @@
             </div>
         </div>
 
-        <!-- 6. TELA ALERTAS (LEMBRETES) -->
         <div id="tela-alertas" class="tela">
             <div class="header"><h1>Alertas</h1><p>Rotina Diária</p></div>
             
@@ -379,7 +365,6 @@
 
     </div>
 
-    <!-- MENU INFERIOR -->
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="navegar('tela-home', this)"><i>🏠</i><span>Home</span></button>
         <button class="tab-btn" onclick="navegar('tela-consultas', this)"><i>🩺</i><span>Consultas</span></button>
@@ -389,7 +374,6 @@
         <button class="tab-btn" onclick="navegar('tela-ajustes', this)"><i>⚙️</i><span>Ajustes</span></button>
     </div>
 
-    <!-- MODAL DO RELATÓRIO PDF -->
     <div id="modalRelatorio">
         <div class="rel-topo"><b>RELATÓRIO MÉDICO</b><button onclick="fecharRelatorio()" style="width:auto; background:none; border:none; color:white; font-weight:bold;">FECHAR X</button></div>
         <div id="areaRel" class="folha">
@@ -417,7 +401,6 @@
         </div>
     </div>
 
-    <!-- MODAL DO ALARME NA TELA -->
     <div id="modalAlarme">
         <div class="alarme-box">
             <div style="font-size: 50px; margin-bottom: 5px;">⏰</div>
@@ -429,24 +412,28 @@
         </div>
     </div>
 
-    <!-- IMPORTAÇÃO E LÓGICA DO FIREBASE COMO MÓDULO -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('GlicoGabi: App pronto para instalar!', reg))
+                .catch(err => console.error('Erro ao registrar instalador PWA:', err));
+            });
+        }
+    </script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ==============================================================
-        // CONFIGURAÇÃO DO FIREBASE (COM AS CHAVES DO SEU PROJETO REAL)
-        // ==============================================================
         let firebaseConfig;
         let appId = 'default-app-id';
 
         if (typeof __firebase_config !== 'undefined') {
-            // Se estiver rodando dentro do meu simulador (Canvas), usa o banco automático
             firebaseConfig = JSON.parse(__firebase_config);
             appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         } else {
-            // SEU BANCO DE DADOS REAL - CONFIGURADO!
             firebaseConfig = {
                 apiKey: "AIzaSyBLaOopjGwdocj8X32_3DMAKyjomT7jik0",
                 authDomain: "glicemia-1ab57.firebaseapp.com",
@@ -462,32 +449,26 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Variáveis Globais do Sistema
         const CHAVE = "gabi_database_v2";
         const CHAVE_ESTOQUE = "gabi_estoque";
         const CHAVE_LEMBRETES = "gabi_lembretes";
         
         let currentUser = null;
-        let isSyncing = false; // Evita loop infinito de upload/download
+        let isSyncing = false; 
         let syncCode = localStorage.getItem('gabi_sync_code') || '';
         let lembretesDisparadosHoje = {}; 
         let unsubscribeSnapshot = null;
 
-        // Variaveis de Áudio e Alarme na tela
         let intervalAudio = null;
         let msgAlarmeAtual = "";
         let tipoSomAlarmeAtual = "padrao";
 
-        // Variaveis de dados
         let consultas = JSON.parse(localStorage.getItem('gabi_consultas')) || [];
         let eventos = JSON.parse(localStorage.getItem('gabi_linha_tempo')) || [];
         let lembretes = JSON.parse(localStorage.getItem(CHAVE_LEMBRETES)) || [];
         let dbDoses = JSON.parse(localStorage.getItem('gabi_ajustes_vFinal')) || [];
         let historicoDoses = JSON.parse(localStorage.getItem('gabi_historico_doses')) || [];
 
-        // ==============================================================
-        // AUTENTICAÇÃO ANÔNIMA E SINCRONIZAÇÃO (FIREBASE)
-        // ==============================================================
         const initAuth = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -506,7 +487,6 @@
             }
         });
 
-        // Função Master que envia os dados para a nuvem
         window.sincronizarComNuvem = async function(campo, dados) {
             if (!currentUser || !syncCode || isSyncing) return;
             try {
@@ -524,7 +504,6 @@
             document.getElementById('statusSync').innerText = "Status: Conectado! ✅ Código: " + syncCode;
             
             if (currentUser) {
-                // Ao conectar, envia os dados locais atuais pra garantir que a nuvem tem a base
                 isSyncing = true;
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'glico_sync_' + syncCode);
                 setDoc(docRef, {
@@ -551,7 +530,7 @@
 
             unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
-                    isSyncing = true; // Pausa uploads enquanto estamos baixando
+                    isSyncing = true; 
                     const data = docSnap.data();
                     
                     if (data.glicemia) { localStorage.setItem(CHAVE, JSON.stringify(data.glicemia)); renderizarGlicemia(); }
@@ -562,14 +541,11 @@
                     if (data.historico_doses) { localStorage.setItem('gabi_historico_doses', JSON.stringify(data.historico_doses)); historicoDoses = data.historico_doses; renderDoses(); }
                     if (data.lembretes) { localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(data.lembretes)); lembretes = data.lembretes; renderizarLembretes(); }
                     
-                    setTimeout(() => isSyncing = false, 500); // Libera uploads novamente
+                    setTimeout(() => isSyncing = false, 500); 
                 }
             }, (error) => { console.error("Erro ao baixar da nuvem:", error); });
         };
 
-        // ==============================================================
-        // FUNÇÕES DO SISTEMA (Tornadas globais para o HTML acessar)
-        // ==============================================================
         window.onload = () => {
             document.getElementById('data_r').value = new Date().toISOString().split('T')[0];
             document.getElementById('selAno').value = new Date().getFullYear();
@@ -588,7 +564,7 @@
             if(wppMedicoSalvo) document.getElementById('wppMedico').value = wppMedicoSalvo;
 
             renderDosesHome(); renderizarGlicemia(); renderizarLembretes();
-            setInterval(checarAlarmes, 10000); // Checa alarmes a cada 10 segundos
+            setInterval(checarAlarmes, 10000); 
         };
 
         window.navegar = function(idTela, btn) {
@@ -605,7 +581,6 @@
             if (idTela === 'tela-alertas') renderizarLembretes();
         };
 
-        // --- GLICEMIA ---
         window.salvarGlicemia = function() {
             const valor = document.getElementById('glicemia').value;
             const data = document.getElementById('data_r').value;
@@ -616,9 +591,8 @@
             const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]");
             banco.push(novoRegistro);
             localStorage.setItem(CHAVE, JSON.stringify(banco));
-            sincronizarComNuvem('glicemia', banco); // <--- SYNC
+            sincronizarComNuvem('glicemia', banco); 
 
-            // Alarme Inteligente +1 hora
             try {
                 let partes = hora.split(':');
                 let h = (parseInt(partes[0]) + 1) % 24; 
@@ -626,7 +600,6 @@
                 let horaAlarme = h.toString().padStart(2, '0') + ":" + m.toString().padStart(2, '0');
                 let nomeAlarmeInteligente = `⏰ Medir Glicose Novamente (${novoRegistro.momento})`;
                 
-                // Reconhece o último e sobreescreve para não criar 3 alarmes repetidos
                 let alarmeExistente = lembretes.find(l => l.nome === nomeAlarmeInteligente);
                 if (alarmeExistente) {
                     alarmeExistente.hora = horaAlarme;
@@ -636,7 +609,7 @@
 
                 lembretes.sort((a, b) => a.hora.localeCompare(b.hora));
                 localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes));
-                sincronizarComNuvem('lembretes', lembretes); // <--- SYNC
+                sincronizarComNuvem('lembretes', lembretes); 
                 renderizarLembretes();
                 alert(`Salvo com sucesso!\nO GlicoGabi ajustou o alarme para as ${horaAlarme} para você medir de novo.`);
             } catch(e) {}
@@ -650,7 +623,7 @@
             let banco = JSON.parse(localStorage.getItem(CHAVE) || "[]");
             banco = banco.filter(item => item.id !== id);
             localStorage.setItem(CHAVE, JSON.stringify(banco));
-            sincronizarComNuvem('glicemia', banco); // <--- SYNC
+            sincronizarComNuvem('glicemia', banco); 
             renderizarGlicemia();
         };
 
@@ -669,7 +642,6 @@
                 agrupados[item.momento].push(item); 
             });
 
-            // RENDERIZAR OS CARDS NA TELA HOME
             for(let momento in agrupados) {
                 let itens = agrupados[momento];
                 let htmlItens = itens.map(item => {
@@ -697,19 +669,17 @@
             document.getElementById('resumoDia').innerHTML = filtrados.length > 0 ? `Média do dia: <b>${Math.round(somaGlicemia / filtrados.length)} mg/dL</b> (${filtrados.length} medições)` : `Nenhuma medição registrada para este dia.`;
         };
 
-        // --- ESTOQUE ---
         window.adicionarInsumo = function() {
             const nome = document.getElementById('nomeInsumo').value; const qtd = parseInt(document.getElementById('qtdInsumo').value); const validade = document.getElementById('validadeInsumo').value;
             if(!nome || isNaN(qtd)) return alert("Preencha o nome e a quantidade!");
             let estoque = JSON.parse(localStorage.getItem(CHAVE_ESTOQUE) || "[]");
             estoque.push({ nome, qtd, validade });
             
-            // Criar alarme automático de vencimento 1 mês antes
             if(validade) {
                 try {
-                    let dataVal = new Date(`${validade}T09:00:00`); // Alerta sempre as 09:00 da manhã
+                    let dataVal = new Date(`${validade}T09:00:00`); 
                     if (!isNaN(dataVal.getTime())) {
-                        let umMesAntes = new Date(dataVal.getTime() - 30 * 24 * 60 * 60 * 1000); // Tira aprox. 30 dias
+                        let umMesAntes = new Date(dataVal.getTime() - 30 * 24 * 60 * 60 * 1000); 
                         lembretes.push({ 
                             id: Date.now()+1, 
                             nome: `📦 Vencimento próximo (1 mês): ${nome}`, 
@@ -727,7 +697,7 @@
             }
 
             localStorage.setItem(CHAVE_ESTOQUE, JSON.stringify(estoque));
-            sincronizarComNuvem('estoque', estoque); // <--- SYNC
+            sincronizarComNuvem('estoque', estoque); 
             document.getElementById('nomeInsumo').value = ""; document.getElementById('qtdInsumo').value = ""; document.getElementById('validadeInsumo').value = "";
             renderizarEstoque();
         };
@@ -735,7 +705,7 @@
             let estoque = JSON.parse(localStorage.getItem(CHAVE_ESTOQUE) || "[]");
             estoque[index].qtd = Math.max(0, estoque[index].qtd + valor);
             localStorage.setItem(CHAVE_ESTOQUE, JSON.stringify(estoque));
-            sincronizarComNuvem('estoque', estoque); // <--- SYNC
+            sincronizarComNuvem('estoque', estoque); 
             renderizarEstoque();
         };
         window.removerInsumo = function(index) {
@@ -743,7 +713,7 @@
             let estoque = JSON.parse(localStorage.getItem(CHAVE_ESTOQUE) || "[]");
             estoque.splice(index, 1);
             localStorage.setItem(CHAVE_ESTOQUE, JSON.stringify(estoque));
-            sincronizarComNuvem('estoque', estoque); // <--- SYNC
+            sincronizarComNuvem('estoque', estoque); 
             renderizarEstoque();
         };
         window.renderizarEstoque = function() {
@@ -757,7 +727,6 @@
             });
         };
 
-        // --- AJUSTES / PRESCRIÇÕES ---
         window.toggleAbaAjustes = function(aba) { 
             document.getElementById('abaDoses').classList.toggle('hidden', aba !== 'doses'); document.getElementById('abaConfig').classList.toggle('hidden', aba !== 'config'); document.getElementById('btnDoses').classList.toggle('active', aba === 'doses'); document.getElementById('btnConfig').classList.toggle('active', aba === 'config'); 
             if(aba === 'doses') renderDoses(); 
@@ -780,7 +749,7 @@
             }
             
             historicoDoses.unshift({ data: dataHoraAtual, msg: logMsg });
-            if(historicoDoses.length > 50) historicoDoses.pop(); // Mantém os últimos 50 registros para não pesar
+            if(historicoDoses.length > 50) historicoDoses.pop(); 
 
             localStorage.setItem('gabi_ajustes_vFinal', JSON.stringify(dbDoses)); 
             localStorage.setItem('gabi_historico_doses', JSON.stringify(historicoDoses));
@@ -830,7 +799,6 @@
             if(dbDoses.length > 0) { box.style.display = 'block'; cont.innerHTML = dbDoses.map(d => `${d.nome} (${d.hora || 'Sem hora'}): <span style="color:var(--primaria)">${d.qtd}</span>`).join(' | '); } else { box.style.display = 'none'; }
         };
 
-        // --- CONSULTAS ---
         window.salvarConsulta = function() {
             const medico = document.getElementById('medico').value; const data = document.getElementById('data_consulta').value; const hora = document.getElementById('hora_consulta').value; const local = document.getElementById('local').value; const tipo = document.getElementById('tipo').value;
             const editId = document.getElementById('editConsultaId').value;
@@ -841,15 +809,12 @@
                 const novaConsulta = { id: Date.now(), medico, data, hora, local, tipo, obs: "" };
                 consultas.push(novaConsulta);
                 
-                // Gerar Alarmes Automáticos da Consulta
                 try {
                     let dataHoraConsulta = new Date(`${data}T${hora}:00`);
                     if (!isNaN(dataHoraConsulta.getTime())) {
-                        // Alarme 1 dia antes
                         let umDiaAntes = new Date(dataHoraConsulta.getTime() - 24 * 60 * 60 * 1000);
                         lembretes.push({ id: Date.now()+1, nome: `🩺 Consulta amanhã: ${medico}`, hora: umDiaAntes.toTimeString().substring(0,5), dataExata: umDiaAntes.toISOString().split('T')[0], tipoSom: 'rapido' });
                         
-                        // Alarme 2 horas antes
                         let duasHorasAntes = new Date(dataHoraConsulta.getTime() - 2 * 60 * 60 * 1000);
                         lembretes.push({ id: Date.now()+2, nome: `🩺 Consulta em 2h: ${medico}`, hora: duasHorasAntes.toTimeString().substring(0,5), dataExata: duasHorasAntes.toISOString().split('T')[0], tipoSom: 'rapido' });
                         
@@ -862,7 +827,7 @@
             } else {
                 const idx = consultas.findIndex(c => c.id == editId);
                 if (idx > -1) {
-                    const oldObs = consultas[idx].obs; // preserva a obs antiga
+                    const oldObs = consultas[idx].obs; 
                     consultas[idx] = { id: parseInt(editId), medico, data, hora, local, tipo, obs: oldObs };
                 }
                 document.getElementById('editConsultaId').value = "-1";
@@ -909,7 +874,7 @@
                 localStorage.setItem('gabi_consultas', JSON.stringify(consultas)); 
                 sincronizarComNuvem('consultas', consultas);
                 alert("Anotações salvas com sucesso!");
-                window.toggleObsConsulta(id); // recolhe o card
+                window.toggleObsConsulta(id); 
             }
         };
 
@@ -940,7 +905,6 @@
             });
         };
 
-        // --- LINHA DO TEMPO ---
         window.salvarLinhaTempo = function() {
             const mes = document.getElementById('mes_hist').value; const ano = document.getElementById('ano_hist').value; const desc = document.getElementById('descricao_hist').value;
             const editId = document.getElementById('editHistId').value;
@@ -991,7 +955,6 @@
             });
         };
 
-        // --- ALARMES E JANELA DE NOTIFICAÇÃO NA TELA ---
         window.tocarSom = function(tipo) {
             try { 
                 const ctx = new (window.AudioContext || window.webkitAudioContext)(); 
@@ -1016,14 +979,13 @@
                     osc.stop(ctx.currentTime + 0.6);
                 } else if (tipo === 'suave') {
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(440, ctx.currentTime); // Nota La
+                    osc.frequency.setValueAtTime(440, ctx.currentTime); 
                     gainNode.gain.setValueAtTime(0, ctx.currentTime);
                     gainNode.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.5);
                     gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
                     osc.start(); 
                     osc.stop(ctx.currentTime + 1);
                 } else {
-                    // padrao
                     osc.type = 'sine'; 
                     osc.frequency.setValueAtTime(880, ctx.currentTime); 
                     osc.start(); 
@@ -1104,12 +1066,11 @@
             const agora = new Date(); 
             const horaAtual = agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0'); 
             const dataHoje = agora.toISOString().split('T')[0];
-            const diaSemanaHoje = agora.getDay(); // 0 a 6 (Domingo a Sábado)
+            const diaSemanaHoje = agora.getDay(); 
 
             lembretes.forEach(l => {
                 let deveTocar = false;
                 
-                // Checa se é um alarme de Data Exata (Consultas, Vencimentos) ou de Repetição (Dias da Semana)
                 if (l.dataExata) {
                     if (l.dataExata === dataHoje && l.hora === horaAtual) deveTocar = true;
                 } else {
@@ -1134,7 +1095,6 @@
             document.getElementById('textoModalAlarme').innerText = mensagem;
             document.getElementById('modalAlarme').style.display = 'flex';
             
-            // Toca um som imediatamente e depois repete até desligar
             window.tocarSom(tipoSom);
             if (intervalAudio) clearInterval(intervalAudio);
             intervalAudio = setInterval(() => window.tocarSom(tipoSom), 2000); 
@@ -1150,14 +1110,12 @@
         };
 
         window.sonecaAlarme = function() {
-            window.pararAlarme(); // Para o som e esconde
-            // Programa de forma forçada para tocar daqui a 5 minutos exatos
+            window.pararAlarme(); 
             setTimeout(() => {
                 window.dispararNotificacao(msgAlarmeAtual, tipoSomAlarmeAtual);
             }, 5 * 60 * 1000); 
         };
 
-        // --- RELATÓRIOS E LIMPEZA ---
         window.salvarWpp = () => {
             localStorage.setItem('gabi_wpp_gabi', document.getElementById('wppGabi').value);
             localStorage.setItem('gabi_wpp_medico', document.getElementById('wppMedico').value);
@@ -1173,7 +1131,6 @@
             const mesIdx = mesesNomes.indexOf(mesSel);
             const diasNoMes = new Date(anoSel, mesIdx + 1, 0).getDate();
 
-            // Lógica para filtrar a semana
             let startDay = 1; let endDay = diasNoMes;
             if (semSel === '1') { startDay = 1; endDay = 7; }
             else if (semSel === '2') { startDay = 8; endDay = 14; }
@@ -1184,7 +1141,6 @@
             const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]");
             let html = ""; 
             
-            // Loop vai montar a tabela APENAS nos dias selecionados da semana
             for(let dia=startDay; dia<=endDay; dia++) { 
                 const dadosDoDia = banco.filter(item => { const dataObj = new Date(item.data + "T00:00:00"); return dataObj.getDate() === dia && mesesNomes[dataObj.getMonth()] === mesSel && dataObj.getFullYear().toString() === anoSel; });
                 const getVal = (m) => { const r = dadosDoDia.filter(d => d.momento.toLowerCase().includes(m.toLowerCase())); return r.length === 0 ? "" : r.map(d => `<b>${d.valor}</b>`).join('<br>'); };
@@ -1201,7 +1157,7 @@
         };
 
         window.exportarPDF = () => {
-            window.verRelatorio(true); // Atualiza a tabela silenciosamente para bater com a semana escolhida antes de baixar
+            window.verRelatorio(true); 
             const semSel = document.getElementById('selSemana').value;
             const nomeArq = semSel === 'all' ? `Relatorio_Gabi_${document.getElementById('selMes').value}.pdf` : `Relatorio_Gabi_${document.getElementById('selMes').value}_Semana${semSel}.pdf`;
             html2pdf().from(document.getElementById('areaRel')).set({ margin: [2,2,2,2], filename: nomeArq, jsPDF: { orientation: 'landscape' } }).save();
@@ -1210,7 +1166,7 @@
         window.limparHistorico = function() {
             if(confirm("ATENÇÃO: Isso apagará TODO o seu histórico de Glicemia! Continuar?")) {
                 localStorage.removeItem(CHAVE);
-                sincronizarComNuvem('glicemia', []); // Deleta na nuvem tbm
+                sincronizarComNuvem('glicemia', []); 
                 alert("Histórico apagado."); renderizarGlicemia();
             }
         };
@@ -1219,9 +1175,8 @@
             const wppGabi = document.getElementById('wppGabi').value;
             const wppMedico = document.getElementById('wppMedico').value;
 
-            // Pergunta para quem será enviado o relatório
             const opcao = prompt("Para quem você deseja enviar o relatório?\n\nDigite 1 para Gabriela\nDigite 2 para Médico", "2");
-            if (opcao === null) return; // Se a pessoa clicar em "Cancelar", não faz nada
+            if (opcao === null) return; 
 
             let num = "";
             if (opcao === "1") {
@@ -1252,7 +1207,6 @@
             
             const banco = JSON.parse(localStorage.getItem(CHAVE) || "[]"); let temDado = false;
             
-            // CONSTRUINDO A MENSAGEM DO WHATSAPP DE FORMA SUPER ORGANIZADA (IMITANDO A TABELA)
             for(let dia=startDay; dia<=endDay; dia++) {
                 const dadosDoDia = banco.filter(item => { const dataObj = new Date(item.data + "T00:00:00"); return dataObj.getDate() === dia && mesesNomes[dataObj.getMonth()] === mesSel && dataObj.getFullYear().toString() === anoSel; });
                 if(dadosDoDia.length > 0) {
@@ -1269,7 +1223,6 @@
             }
             if(!temDado) texto += `Nenhuma medição registrada neste período.`;
             
-            // Limpa parênteses, espaços e traços do número e usa o link universal
             const numLimpo = num.replace(/\D/g, '');
             window.open(`https://api.whatsapp.com/send?phone=55${numLimpo}&text=${encodeURIComponent(texto)}`); 
         };
