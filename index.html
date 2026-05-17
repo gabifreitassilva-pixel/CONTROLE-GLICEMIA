@@ -86,7 +86,7 @@
         .btn-excluir { color: #ff4444; font-weight: bold; cursor: pointer; border: none; background: none; width: auto; padding: 0; font-size: 16px; }
         
         .group-card { background: white; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; border-left: 6px solid var(--laranja); overflow: hidden; }
-        .group-header { padding: 10px 15px; font-weight: bold; font-size: 13px; color: var(--primaria); display: flex; justify-content: space-between; background: #f9f9f9; }
+        .group-header { padding: 10px 15px; font-weight: bold; font-size: 13px; color: var(--primaria); display: flex; justify-content: space-between; background: #f9f9f9; align-items: center; }
         .group-header button { width: auto; background: none; color: red; padding: 0; font-size: 18px;}
         .main-entry { padding: 15px; }
         .doc-name { font-size: 18px; font-weight: bold; color: #333; }
@@ -179,6 +179,7 @@
         <div id="tela-consultas" class="tela">
             <div class="header"><h1>Consultas</h1><p>Agenda da Gabriela</p></div>
             <div class="input-area">
+                <input type="hidden" id="editConsultaId" value="-1">
                 <label>Médico ou Especialidade</label><input type="text" id="medico" placeholder="Ex: Dr. João">
                 <div style="display: flex; gap: 10px;">
                     <div style="flex: 1;"><label>Data</label><input type="date" id="data_consulta"></div>
@@ -186,7 +187,7 @@
                 </div>
                 <label>Local</label><input type="text" id="local" placeholder="Endereço">
                 <label>Tipo</label><select id="tipo"><option value="Consulta">🩺 Consulta</option><option value="Exame">🧪 Exame</option></select>
-                <button onclick="salvarConsulta()">Salvar Agendamento</button>
+                <button id="btnSalvarConsulta" class="btn-acao" onclick="salvarConsulta()" style="margin-bottom: 0;">Salvar Agendamento</button>
             </div>
             <div id="historicoConsultas" class="history-list"></div>
         </div>
@@ -702,6 +703,29 @@
             if(!nome || isNaN(qtd)) return alert("Preencha o nome e a quantidade!");
             let estoque = JSON.parse(localStorage.getItem(CHAVE_ESTOQUE) || "[]");
             estoque.push({ nome, qtd, validade });
+            
+            // Criar alarme automático de vencimento 1 mês antes
+            if(validade) {
+                try {
+                    let dataVal = new Date(`${validade}T09:00:00`); // Alerta sempre as 09:00 da manhã
+                    if (!isNaN(dataVal.getTime())) {
+                        let umMesAntes = new Date(dataVal.getTime() - 30 * 24 * 60 * 60 * 1000); // Tira aprox. 30 dias
+                        lembretes.push({ 
+                            id: Date.now()+1, 
+                            nome: `📦 Vencimento próximo (1 mês): ${nome}`, 
+                            hora: '09:00', 
+                            dataExata: umMesAntes.toISOString().split('T')[0], 
+                            tipoSom: 'suave' 
+                        });
+                        lembretes.sort((a, b) => a.hora.localeCompare(b.hora));
+                        localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes));
+                        sincronizarComNuvem('lembretes', lembretes);
+                        renderizarLembretes();
+                        alert("Insumo adicionado e alarme de vencimento agendado para 1 mês antes!");
+                    }
+                } catch(e) {}
+            }
+
             localStorage.setItem(CHAVE_ESTOQUE, JSON.stringify(estoque));
             sincronizarComNuvem('estoque', estoque); // <--- SYNC
             document.getElementById('nomeInsumo').value = ""; document.getElementById('qtdInsumo').value = ""; document.getElementById('validadeInsumo').value = "";
@@ -806,20 +830,117 @@
             if(dbDoses.length > 0) { box.style.display = 'block'; cont.innerHTML = dbDoses.map(d => `${d.nome} (${d.hora || 'Sem hora'}): <span style="color:var(--primaria)">${d.qtd}</span>`).join(' | '); } else { box.style.display = 'none'; }
         };
 
-        // --- CONSULTAS E LINHA DO TEMPO ---
+        // --- CONSULTAS ---
         window.salvarConsulta = function() {
             const medico = document.getElementById('medico').value; const data = document.getElementById('data_consulta').value; const hora = document.getElementById('hora_consulta').value; const local = document.getElementById('local').value; const tipo = document.getElementById('tipo').value;
-            if (!medico || !data || !hora) return alert("Preencha os campos obrigatórios!");
-            consultas.push({ id: Date.now(), medico, data, hora, local, tipo }); consultas.sort((a, b) => a.data.localeCompare(b.data) || a.hora.localeCompare(b.hora));
+            const editId = document.getElementById('editConsultaId').value;
+            
+            if (!medico || !data || !hora) return alert("Preencha os campos obrigatórios (Médico, Data e Hora)!");
+            
+            if (editId === "-1") {
+                const novaConsulta = { id: Date.now(), medico, data, hora, local, tipo, obs: "" };
+                consultas.push(novaConsulta);
+                
+                // Gerar Alarmes Automáticos da Consulta
+                try {
+                    let dataHoraConsulta = new Date(`${data}T${hora}:00`);
+                    if (!isNaN(dataHoraConsulta.getTime())) {
+                        // Alarme 1 dia antes
+                        let umDiaAntes = new Date(dataHoraConsulta.getTime() - 24 * 60 * 60 * 1000);
+                        lembretes.push({ id: Date.now()+1, nome: `🩺 Consulta amanhã: ${medico}`, hora: umDiaAntes.toTimeString().substring(0,5), dataExata: umDiaAntes.toISOString().split('T')[0], tipoSom: 'rapido' });
+                        
+                        // Alarme 2 horas antes
+                        let duasHorasAntes = new Date(dataHoraConsulta.getTime() - 2 * 60 * 60 * 1000);
+                        lembretes.push({ id: Date.now()+2, nome: `🩺 Consulta em 2h: ${medico}`, hora: duasHorasAntes.toTimeString().substring(0,5), dataExata: duasHorasAntes.toISOString().split('T')[0], tipoSom: 'rapido' });
+                        
+                        localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(lembretes));
+                        sincronizarComNuvem('lembretes', lembretes);
+                        renderizarLembretes();
+                        alert("Consulta agendada! Lembretes criados para 1 dia antes e 2h antes.");
+                    }
+                } catch(e) {}
+            } else {
+                const idx = consultas.findIndex(c => c.id == editId);
+                if (idx > -1) {
+                    const oldObs = consultas[idx].obs; // preserva a obs antiga
+                    consultas[idx] = { id: parseInt(editId), medico, data, hora, local, tipo, obs: oldObs };
+                }
+                document.getElementById('editConsultaId').value = "-1";
+                document.getElementById('btnSalvarConsulta').innerText = "Salvar Agendamento";
+            }
+            
+            consultas.sort((a, b) => a.data.localeCompare(b.data) || a.hora.localeCompare(b.hora));
             localStorage.setItem('gabi_consultas', JSON.stringify(consultas)); sincronizarComNuvem('consultas', consultas); renderizarConsultas();
             document.getElementById('medico').value = ""; document.getElementById('local').value = "";
         };
-        window.excluirConsulta = function(id) { consultas = consultas.filter(c => c.id !== id); localStorage.setItem('gabi_consultas', JSON.stringify(consultas)); sincronizarComNuvem('consultas', consultas); renderizarConsultas(); };
-        window.renderizarConsultas = function() {
-            const lista = document.getElementById('historicoConsultas'); lista.innerHTML = "";
-            consultas.forEach(c => { lista.innerHTML += `<div class="group-card" style="border-left-color: ${c.tipo === 'Exame' ? 'var(--verde)' : 'var(--laranja)'}"><div class="group-header"><span>📅 ${c.data.split('-').reverse().join('/')}</span><button onclick="excluirConsulta(${c.id})">×</button></div><div class="main-entry"><span class="doc-name">${c.medico}</span><br>⏰ ${c.hora} | 📍 ${c.local}</div></div>`; });
+
+        window.editarConsulta = function(id) {
+            const c = consultas.find(x => x.id === id);
+            if (!c) return;
+            document.getElementById('medico').value = c.medico;
+            document.getElementById('data_consulta').value = c.data;
+            document.getElementById('hora_consulta').value = c.hora;
+            document.getElementById('local').value = c.local;
+            document.getElementById('tipo').value = c.tipo;
+            document.getElementById('editConsultaId').value = c.id;
+            
+            document.getElementById('btnSalvarConsulta').innerText = "Atualizar Agendamento";
+            document.querySelector('.content-container').scrollTo({top: 0, behavior: 'smooth'});
         };
 
+        window.excluirConsulta = function(id) { 
+            if(!confirm("Excluir esta consulta?")) return;
+            consultas = consultas.filter(c => c.id !== id); 
+            localStorage.setItem('gabi_consultas', JSON.stringify(consultas)); 
+            sincronizarComNuvem('consultas', consultas); 
+            renderizarConsultas(); 
+        };
+
+        window.toggleObsConsulta = function(id) {
+            const el = document.getElementById('obs_card_' + id);
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        };
+
+        window.salvarObsConsulta = function(id) {
+            const txt = document.getElementById('obs_txt_' + id).value;
+            const c = consultas.find(x => x.id === id);
+            if(c) {
+                c.obs = txt;
+                localStorage.setItem('gabi_consultas', JSON.stringify(consultas)); 
+                sincronizarComNuvem('consultas', consultas);
+                alert("Anotações salvas com sucesso!");
+                window.toggleObsConsulta(id); // recolhe o card
+            }
+        };
+
+        window.renderizarConsultas = function() {
+            const lista = document.getElementById('historicoConsultas'); lista.innerHTML = "";
+            consultas.forEach(c => { 
+                lista.innerHTML += `
+                <div class="group-card" style="border-left-color: ${c.tipo === 'Exame' ? 'var(--verde)' : 'var(--laranja)'}">
+                    <div class="group-header" style="align-items: center;">
+                        <span>📅 ${c.data.split('-').reverse().join('/')}</span>
+                        <div>
+                            <button onclick="editarConsulta(${c.id})" style="color: var(--primaria); margin-right: 15px; font-size: 16px; background: none; border: none; padding: 0;">✏️</button>
+                            <button onclick="excluirConsulta(${c.id})" style="color: #f44336; font-size: 16px; background: none; border: none; padding: 0;">✕</button>
+                        </div>
+                    </div>
+                    <div class="main-entry">
+                        <span class="doc-name">${c.medico}</span><br>
+                        ⏰ ${c.hora} | 📍 ${c.local || 'Sem local'}
+                        <div style="margin-top: 15px;">
+                            <button onclick="toggleObsConsulta(${c.id})" style="background: #e3d9ff; color: var(--primaria); padding: 8px 12px; font-size: 11px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; width: 100%;">📝 Observações e Anotações</button>
+                        </div>
+                        <div id="obs_card_${c.id}" style="display: none; margin-top: 10px; background: #f4f0ff; padding: 10px; border-radius: 10px;">
+                            <textarea id="obs_txt_${c.id}" style="width: 100%; height: 80px; font-size: 13px; border: 1px solid #ddd; border-radius: 8px; padding: 8px;" placeholder="Digite aqui o que precisa perguntar pro médico, exames para levar, etc...">${c.obs || ''}</textarea>
+                            <button onclick="salvarObsConsulta(${c.id})" style="background: var(--primaria); color: white; padding: 10px; font-size: 12px; border-radius: 8px; width: 100%; margin-top: 8px; border: none; font-weight: bold; cursor: pointer;">Salvar Anotações</button>
+                        </div>
+                    </div>
+                </div>`; 
+            });
+        };
+
+        // --- LINHA DO TEMPO ---
         window.salvarLinhaTempo = function() {
             const mes = document.getElementById('mes_hist').value; const ano = document.getElementById('ano_hist').value; const desc = document.getElementById('descricao_hist').value;
             const editId = document.getElementById('editHistId').value;
@@ -957,15 +1078,21 @@
             
             lembretes.forEach(l => { 
                 const icone = iconesSom[l.tipoSom] || '🔔';
-                const diasRep = l.dias || [0,1,2,3,4,5,6]; // Para manter alarmes antigos funcionando todo dia
-                let diasTexto = diasRep.length === 7 ? "Todos os dias" : diasRep.map(d => diasNomesCurto[d]).join(', ');
+                let diasTexto = "";
+                
+                if (l.dataExata) {
+                    diasTexto = "📅 Apenas em " + l.dataExata.split('-').reverse().join('/');
+                } else {
+                    const diasRep = l.dias || [0,1,2,3,4,5,6];
+                    diasTexto = "🔄 " + (diasRep.length === 7 ? "Todos os dias" : diasRep.map(d => diasNomesCurto[d]).join(', '));
+                }
 
                 lista.innerHTML += `
                 <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 5px solid var(--laranja);">
                     <div>
                         <div style="font-weight: bold; font-size: 18px; color: #333;">⏰ ${l.hora}</div>
                         <div style="font-size: 14px; color: #666; margin-top: 3px;">${icone} ${l.nome}</div>
-                        <div style="font-size: 11px; color: var(--primaria); margin-top: 3px; font-weight: bold;">🔄 ${diasTexto}</div>
+                        <div style="font-size: 11px; color: var(--primaria); margin-top: 3px; font-weight: bold;">${diasTexto}</div>
                     </div>
                     <button onclick="excluirLembrete(${l.id})" style="background: transparent; color: #f44336; font-size: 20px; padding: 5px; width: auto; border: none;">🗑️</button>
                 </div>`; 
@@ -980,14 +1107,21 @@
             const diaSemanaHoje = agora.getDay(); // 0 a 6 (Domingo a Sábado)
 
             lembretes.forEach(l => {
-                const diasRepeticao = l.dias || [0,1,2,3,4,5,6]; // Fallback pra garantir o diário
-                if (diasRepeticao.includes(diaSemanaHoje)) {
-                    if (l.hora === horaAtual) {
-                        const chaveDisparo = `${l.id}_${dataHoje}_${horaAtual}`;
-                        if (!lembretesDisparadosHoje[chaveDisparo]) { 
-                            window.dispararNotificacao(l.nome, l.tipoSom || 'padrao'); 
-                            lembretesDisparadosHoje[chaveDisparo] = true; 
-                        }
+                let deveTocar = false;
+                
+                // Checa se é um alarme de Data Exata (Consultas, Vencimentos) ou de Repetição (Dias da Semana)
+                if (l.dataExata) {
+                    if (l.dataExata === dataHoje && l.hora === horaAtual) deveTocar = true;
+                } else {
+                    const diasRepeticao = l.dias || [0,1,2,3,4,5,6];
+                    if (diasRepeticao.includes(diaSemanaHoje) && l.hora === horaAtual) deveTocar = true;
+                }
+
+                if (deveTocar) {
+                    const chaveDisparo = `${l.id}_${dataHoje}_${horaAtual}`;
+                    if (!lembretesDisparadosHoje[chaveDisparo]) { 
+                        window.dispararNotificacao(l.nome, l.tipoSom || 'padrao'); 
+                        lembretesDisparadosHoje[chaveDisparo] = true; 
                     }
                 }
             });
