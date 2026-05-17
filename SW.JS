@@ -1,12 +1,14 @@
-// Aumente a versão (ex: v16, v17...) sempre que fizer alterações para o celular atualizar o cache
-const CACHE_NAME = 'glicogabi-v17'; 
+// Aumentamos a versão para v16 para forçar o celular a limpar o erro antigo
+const CACHE_NAME = 'glicogabi-v16'; 
 
+// Deixamos APENAS os arquivos que realmente existem no seu projeto agora!
 const ASSETS = [
   'index.html',
-  'ICONE.png', 
-  'MANIFEST.JSON'
+  'manifest.json',
+  'ICONE.png'
 ];
 
+// Evento de Instalação: Salva os arquivos reais no cache
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -17,6 +19,7 @@ self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
 
+// Evento de Ativação: Limpa os caches antigos e fantasmas
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keyList) => {
@@ -31,6 +34,7 @@ self.addEventListener('activate', (e) => {
   return self.clients.claim();
 });
 
+// Evento Fetch: Carrega o app offline instantaneamente
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((res) => {
