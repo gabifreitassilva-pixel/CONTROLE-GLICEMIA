@@ -1,10 +1,9 @@
-// Aumente a versão (ex: v13, v14...) para atualizar o app no celular
-const CACHE_NAME = 'glicogabi-v15'; 
+const CACHE_NAME = 'glicogabi-v16'; 
 
 const ASSETS = [
   'index.html',
-  'ICONE.png', // Verifique se o seu arquivo de imagem se chama exatamente assim, com .png
-  'manifest.json' // Mudei para minúsculo, garanta que o arquivo no git está minúsculo também
+  'ICONE.png', 
+  'manifest.json'
 ];
 
 self.addEventListener('install', (e) => {
