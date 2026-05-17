@@ -1,11 +1,11 @@
 // Aumentamos a versão para v30 para forçar o celular a limpar o erro antigo
-const CACHE_NAME = 'glicogabi-v31'; 
+const CACHE_NAME = 'glicogabi-v32'; 
 
 // Deixamos APENAS os arquivos que realmente existem no seu projeto agora
 const ASSETS = [
   'index.html',
   'manifest.json',
-  'ÍCONE.PNG'
+  'ícone (2).png'
 ];
 
 // Evento de Instalação: Salva os arquivos reais no cache
