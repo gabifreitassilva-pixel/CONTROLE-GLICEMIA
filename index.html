@@ -328,7 +328,7 @@
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==============================================================
-        // CONFIGURAÇÃO DO FIREBASE
+        // CONFIGURAÇÃO DO FIREBASE (COM AS CHAVES DO SEU PROJETO REAL)
         // ==============================================================
         let firebaseConfig;
         let appId = 'default-app-id';
@@ -338,14 +338,15 @@
             firebaseConfig = JSON.parse(__firebase_config);
             appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         } else {
-            // SEU BANCO DE DADOS (Quando for jogar no GitHub, cole aqui os dados do Firebase!)
+            // SEU BANCO DE DADOS REAL - CONFIGURADO!
             firebaseConfig = {
-                apiKey: "COLE_AQUI_SUA_API_KEY",
-                authDomain: "COLE_AQUI_SEU_DOMAIN.firebaseapp.com",
-                projectId: "COLE_AQUI_SEU_PROJECT_ID",
-                storageBucket: "COLE_AQUI_SEU_BUCKET.appspot.com",
-                messagingSenderId: "COLE_AQUI_SENDER_ID",
-                appId: "COLE_AQUI_APP_ID"
+                apiKey: "AIzaSyBLaOopjGwdocj8X32_3DMAKyjomT7jik0",
+                authDomain: "glicemia-1ab57.firebaseapp.com",
+                projectId: "glicemia-1ab57",
+                storageBucket: "glicemia-1ab57.firebasestorage.app",
+                messagingSenderId: "861904845550",
+                appId: "1:861904845550:web:b7d10603e4a950c07ad1ff",
+                measurementId: "G-CG82DZP6CP"
             };
         }
 
