@@ -259,15 +259,27 @@
                             <tbody id="listaMeds"></tbody>
                         </table>
                     </div>
+                    
+                    <div style="margin-top: 25px; border-top: 1px solid #ddd; padding-top: 15px;">
+                        <label>📜 HISTÓRICO DE ALTERAÇÕES</label>
+                        <div id="listaHistoricoMeds" style="margin-top: 10px; max-height: 150px; overflow-y: auto; font-size: 12px; color: #555;">
+                            <!-- Histórico renderizado aqui -->
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <div id="abaConfig" class="hidden">
                 <div class="section-box">
-                    <label>GERAR RELATÓRIO PDF PARA O MÉDICO</label>
-                    <p style="font-size: 11px; color: #666; margin-bottom: 10px;">O relatório incluirá a glicemia e as doses aplicadas.</p>
-                    <input type="text" id="wppInput" placeholder="WhatsApp (DDD + Número)" onchange="salvarWpp()" style="margin-bottom: 10px;">
-                    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+                    <label>GERAR RELATÓRIO E ENVIAR</label>
+                    <p style="font-size: 11px; color: #666; margin-bottom: 10px;">Selecione o período exato (mês ou semana) para gerar o relatório.</p>
+                    
+                    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                        <input type="text" id="wppGabi" value="11989529685" placeholder="WhatsApp Gabriela" onchange="salvarWpp()" style="flex: 1; margin-bottom: 0; font-size: 12px;">
+                        <input type="text" id="wppMedico" placeholder="WhatsApp Médico" onchange="salvarWpp()" style="flex: 1; margin-bottom: 0; font-size: 12px;">
+                    </div>
+
+                    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
                         <select id="selMes" style="flex: 2; margin-bottom:0;">
                             <option value="Janeiro">Janeiro</option><option value="Fevereiro">Fevereiro</option>
                             <option value="Março">Março</option><option value="Abril">Abril</option>
@@ -278,6 +290,16 @@
                         </select>
                         <input type="number" id="selAno" style="flex: 1; margin-bottom:0;" value="2026">
                     </div>
+
+                    <select id="selSemana" style="width: 100%; margin-bottom: 15px; padding: 12px; border-radius: 10px; border: 1px solid #ddd;">
+                        <option value="all">Mês Completo</option>
+                        <option value="1">Semana 1 (Dias 1 a 7)</option>
+                        <option value="2">Semana 2 (Dias 8 a 14)</option>
+                        <option value="3">Semana 3 (Dias 15 a 21)</option>
+                        <option value="4">Semana 4 (Dias 22 a 28)</option>
+                        <option value="5">Semana 5 (Dias 29 ao fim)</option>
+                    </select>
+                    
                     <button class="btn-acao" onclick="verRelatorio()">1. Visualizar Planilha</button>
                     <button class="btn-acao btn-pdf" onclick="exportarPDF()">2. Baixar PDF</button>
                     <button class="btn-acao btn-wpp" onclick="enviarWpp()">3. Enviar por WhatsApp</button>
@@ -400,6 +422,7 @@
         let eventos = JSON.parse(localStorage.getItem('gabi_linha_tempo')) || [];
         let lembretes = JSON.parse(localStorage.getItem(CHAVE_LEMBRETES)) || [];
         let dbDoses = JSON.parse(localStorage.getItem('gabi_ajustes_vFinal')) || [];
+        let historicoDoses = JSON.parse(localStorage.getItem('gabi_historico_doses')) || [];
 
         // ==============================================================
         // AUTENTICAÇÃO ANÔNIMA E SINCRONIZAÇÃO (FIREBASE)
@@ -449,6 +472,7 @@
                     linha_tempo: eventos,
                     estoque: JSON.parse(localStorage.getItem(CHAVE_ESTOQUE) || "[]"),
                     ajustes_vFinal: dbDoses,
+                    historico_doses: historicoDoses,
                     lembretes: lembretes
                 }, { merge: true }).then(() => {
                     isSyncing = false;
@@ -474,6 +498,7 @@
                     if (data.linha_tempo) { localStorage.setItem('gabi_linha_tempo', JSON.stringify(data.linha_tempo)); eventos = data.linha_tempo; renderizarLinhaTempo(); }
                     if (data.estoque) { localStorage.setItem(CHAVE_ESTOQUE, JSON.stringify(data.estoque)); renderizarEstoque(); }
                     if (data.ajustes_vFinal) { localStorage.setItem('gabi_ajustes_vFinal', JSON.stringify(data.ajustes_vFinal)); dbDoses = data.ajustes_vFinal; renderDosesHome(); renderDoses(); }
+                    if (data.historico_doses) { localStorage.setItem('gabi_historico_doses', JSON.stringify(data.historico_doses)); historicoDoses = data.historico_doses; renderDoses(); }
                     if (data.lembretes) { localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(data.lembretes)); lembretes = data.lembretes; renderizarLembretes(); }
                     
                     setTimeout(() => isSyncing = false, 500); // Libera uploads novamente
@@ -494,6 +519,12 @@
                 document.getElementById('inputSyncCode').value = syncCode;
                 document.getElementById('statusSync').innerText = "Status: Conectado! ✅ Código: " + syncCode;
             }
+
+            const wppGabiSalvo = localStorage.getItem('gabi_wpp_gabi');
+            if(wppGabiSalvo) document.getElementById('wppGabi').value = wppGabiSalvo;
+            
+            const wppMedicoSalvo = localStorage.getItem('gabi_wpp_medico');
+            if(wppMedicoSalvo) document.getElementById('wppMedico').value = wppMedicoSalvo;
 
             renderDosesHome(); renderizarGlicemia(); renderizarLembretes();
             setInterval(checarAlarmes, 10000);
@@ -641,13 +672,66 @@
         window.salvarDose = function() { 
             const nome = document.getElementById('nomeMed').value; const hora = document.getElementById('horaMed').value; const qtd = document.getElementById('qtdMed').value; const idx = parseInt(document.getElementById('editIdx').value); 
             if(!nome || !qtd) return alert("Preencha o nome e a dose."); 
-            if(idx === -1) dbDoses.push({nome, hora, qtd}); else dbDoses[idx] = {nome, hora, qtd}; 
+            
+            const dataHoraAtual = new Date().toLocaleString('pt-BR');
+            let logMsg = "";
+
+            if(idx === -1) {
+                dbDoses.push({nome, hora, qtd}); 
+                logMsg = `➕ Adicionado: ${nome} (${hora || 'Sem hora'}) - Dose: ${qtd}`;
+            } else {
+                const ant = dbDoses[idx];
+                logMsg = `✏️ Alterado: ${ant.nome} de [${ant.qtd}] para [${qtd}]`;
+                dbDoses[idx] = {nome, hora, qtd}; 
+                document.querySelector('#abaDoses .btn-acao').innerText = "Salvar Prescrição";
+            }
+            
+            historicoDoses.unshift({ data: dataHoraAtual, msg: logMsg });
+            if(historicoDoses.length > 50) historicoDoses.pop(); // Mantém os últimos 50 registros para não pesar
+
             localStorage.setItem('gabi_ajustes_vFinal', JSON.stringify(dbDoses)); 
-            sincronizarComNuvem('ajustes_vFinal', dbDoses); // <--- SYNC
+            localStorage.setItem('gabi_historico_doses', JSON.stringify(historicoDoses));
+            
+            sincronizarComNuvem('ajustes_vFinal', dbDoses); 
+            sincronizarComNuvem('historico_doses', historicoDoses); 
+            
             document.getElementById('nomeMed').value = ""; document.getElementById('horaMed').value = ""; document.getElementById('qtdMed').value = ""; document.getElementById('editIdx').value = "-1"; renderDoses(); 
         };
-        window.removerDose = function(i) { if(confirm("Deseja remover?")) { dbDoses.splice(i, 1); localStorage.setItem('gabi_ajustes_vFinal', JSON.stringify(dbDoses)); sincronizarComNuvem('ajustes_vFinal', dbDoses); renderDoses(); } };
-        window.renderDoses = function() { document.getElementById('listaMeds').innerHTML = dbDoses.map((m, i) => `<tr><td>${m.nome}</td><td>${m.hora || '-'}</td><td>${m.qtd}</td><td><button style="width:auto;display:inline;padding:5px;" onclick="removerDose(${i})">🗑️</button></td></tr>`).join(''); renderDosesHome(); };
+        window.editarDose = function(i) {
+            const m = dbDoses[i];
+            document.getElementById('nomeMed').value = m.nome;
+            document.getElementById('horaMed').value = m.hora || '';
+            document.getElementById('qtdMed').value = m.qtd;
+            document.getElementById('editIdx').value = i;
+            document.querySelector('#abaDoses .btn-acao').innerText = "Atualizar Prescrição";
+            document.querySelector('.content-container').scrollTo({top: 0, behavior: 'smooth'});
+        };
+        window.removerDose = function(i) { 
+            if(confirm("Deseja remover esta prescrição?")) { 
+                const ant = dbDoses[i];
+                const dataHoraAtual = new Date().toLocaleString('pt-BR');
+                historicoDoses.unshift({ data: dataHoraAtual, msg: `🗑️ Removido: ${ant.nome} (${ant.qtd})` });
+                
+                dbDoses.splice(i, 1); 
+                localStorage.setItem('gabi_ajustes_vFinal', JSON.stringify(dbDoses)); 
+                localStorage.setItem('gabi_historico_doses', JSON.stringify(historicoDoses));
+                
+                sincronizarComNuvem('ajustes_vFinal', dbDoses); 
+                sincronizarComNuvem('historico_doses', historicoDoses);
+                renderDoses(); 
+            } 
+        };
+        window.renderDoses = function() { 
+            document.getElementById('listaMeds').innerHTML = dbDoses.map((m, i) => `<tr><td>${m.nome}</td><td>${m.hora || '-'}</td><td>${m.qtd}</td><td style="white-space:nowrap;"><button style="background:none; border:none; padding:5px; font-size:16px; cursor:pointer;" onclick="editarDose(${i})">✏️</button><button style="background:none; border:none; padding:5px; font-size:16px; color:#f44336; cursor:pointer;" onclick="removerDose(${i})">✕</button></td></tr>`).join(''); 
+            renderDosesHome(); 
+            
+            const listaHist = document.getElementById('listaHistoricoMeds');
+            if(historicoDoses.length === 0) {
+                listaHist.innerHTML = "Nenhuma alteração registrada.";
+            } else {
+                listaHist.innerHTML = historicoDoses.map(h => `<div style="margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed #eee;"><strong>${h.data}</strong><br>${h.msg}</div>`).join('');
+            }
+        };
         window.renderDosesHome = function() {
             const box = document.getElementById('boxDosesHome'); const cont = document.getElementById('conteudoDosesHome');
             if(dbDoses.length > 0) { box.style.display = 'block'; cont.innerHTML = dbDoses.map(d => `${d.nome} (${d.hora || 'Sem hora'}): <span style="color:var(--primaria)">${d.qtd}</span>`).join(' | '); } else { box.style.display = 'none'; }
@@ -757,7 +841,11 @@
         };
 
         // --- RELATÓRIOS E LIMPEZA ---
-        window.salvarWpp = () => localStorage.setItem('gabi_wpp_ajustes', document.getElementById('wppInput').value);
+        window.salvarWpp = () => {
+            localStorage.setItem('gabi_wpp_gabi', document.getElementById('wppGabi').value);
+            localStorage.setItem('gabi_wpp_medico', document.getElementById('wppMedico').value);
+        };
+        
         window.fecharRelatorio = () => document.getElementById('modalRelatorio').style.display = "none";
         
         window.verRelatorio = function(silent = false) { 
@@ -811,7 +899,24 @@
         };
 
         window.enviarWpp = function() { 
-            const num = document.getElementById('wppInput').value; if(!num) return alert("Informe o número do médico."); 
+            const wppGabi = document.getElementById('wppGabi').value;
+            const wppMedico = document.getElementById('wppMedico').value;
+
+            // Pergunta para quem será enviado o relatório
+            const opcao = prompt("Para quem você deseja enviar o relatório?\n\nDigite 1 para Gabriela\nDigite 2 para Médico", "2");
+            if (opcao === null) return; // Se a pessoa clicar em "Cancelar", não faz nada
+
+            let num = "";
+            if (opcao === "1") {
+                num = wppGabi;
+                if(!num) return alert("O número da Gabriela não está preenchido!");
+            } else if (opcao === "2") {
+                num = wppMedico;
+                if(!num) return alert("O número do Médico não está preenchido!");
+            } else {
+                return alert("Opção inválida! Você precisa digitar o número 1 ou 2.");
+            }
+
             const mesSel = document.getElementById('selMes').value; const anoSel = document.getElementById('selAno').value;
             const semSel = document.getElementById('selSemana').value;
             const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
