@@ -1,4 +1,5 @@
-const CACHE_NAME = 'glicogabi-v17'; 
+// Aumente a versão (ex: v16, v17...) sempre que fizer alterações para o celular atualizar o cache
+const CACHE_NAME = 'glicogabi-v16'; 
 
 const ASSETS = [
   'index.html',
