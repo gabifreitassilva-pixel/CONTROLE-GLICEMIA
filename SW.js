@@ -1,5 +1,5 @@
 // Aumentamos a versão para v30 para forçar o celular a limpar o erro antigo
-const CACHE_NAME = 'glicogabi-v38'; 
+const CACHE_NAME = 'glicogabi-v39'; 
 
 // Deixamos APENAS os arquivos que realmente existem no seu projeto agora
 const ASSETS = [
